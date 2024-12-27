@@ -1,0 +1,145 @@
+format: "xrdf"
+format_version: 1.0
+
+modifiers:
+  - set_base_frame: "base_link"
+
+default_joint_positions: 
+  zarm_l1_joint: 0.34
+  zarm_l2_joint: 0.87
+  zarm_l3_joint: 0.17
+  zarm_l4_joint: -1.22
+  zarm_l5_joint: -0.34
+  zarm_l6_joint: -0.45
+  zarm_l7_joint: 0.0
+  
+cspace: 
+  joint_names: 
+    - "zarm_l1_joint"
+    - "zarm_l2_joint"
+    - "zarm_l3_joint"
+    - "zarm_l4_joint"
+    - "zarm_l5_joint"
+    - "zarm_l6_joint"
+    - "zarm_l7_joint"
+  acceleration_limits: [15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0]
+  jerk_limits: [500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0]
+
+tool_frames: ["zarm_l7_end_effector"]
+
+collision: 
+  geometry: "biped_s40_collision_spheres"
+  buffer_distance:
+    base_link: 0.1
+
+self_collision: 
+  geometry: "biped_s40_collision_spheres"
+  buffer_distance:
+    base_link: 0.1
+
+  ignore: 
+    torso: 
+      - "base_link"
+    base_link: 
+      - "zarm_l1_link"
+      - "torso"
+      - "zarm_l2_link"
+    zarm_l1_link: 
+      - "zarm_l2_link"
+    zarm_l2_link: 
+      - "zarm_l3_link"
+      - "zarm_l1_link"
+    zarm_l3_link: 
+      - "zarm_l4_link"
+      - "zarm_l2_link"
+    zarm_l4_link: 
+      - "zarm_l5_link"
+      - "zarm_l3_link"
+    zarm_l5_link: 
+      - "zarm_l6_link"
+      - "zarm_l4_link"
+    zarm_l6_link: 
+      - "zarm_l7_link"
+      - "zarm_l5_link"
+    zarm_l7_link: 
+      - "zarm_l6_link"
+      - "zarm_l7_end_effector"
+    zarm_l7_end_effector: 
+      - "zarm_l7_link"
+      - "attached_object"
+    attached_object:
+      - "zarm_l7_end_effector"
+
+geometry: 
+  biped_s40_collision_spheres: 
+    spheres: 
+      base_link:
+        - center: [-0.002, -0.003, -0.028] 
+          radius: 0.12244 
+        - center: [-0.001, -0.003, 0.204] 
+          radius: 0.15085 
+        - center: [0.006, 0.001, 0.431]
+          radius: 0.1145
+      zarm_l1_link:
+        - center: [-0.001, -0.085, 0.001]
+          radius: 0.04379 
+      zarm_l2_link:
+        - center: [0.011, -0.005, -0.004]
+          radius: 0.0462 
+      zarm_l3_link:
+        - center: [-0.005, -0.0, -0.123]
+          radius: 0.02294 
+        - center: [-0.003, -0.002, -0.076]
+          radius: 0.02294 
+      zarm_l4_link:
+        - center: [-0.001, 0.001, -0.021]
+          radius: 0.02388 
+      zarm_l5_link:
+        - center: [0.0, 0.002, 0.116]
+          radius: 0.02601 
+      zarm_l6_link:
+        - center: [0.002, -0.0, 0.057]
+          radius: 0.02616 
+      zarm_l7_link:
+        - center: [-0.004, -0.002, -0.093]
+          radius: 0.04362
+        - center: [-0.003, 0.004, -0.011]
+          radius: 0.041
+        - center: [0.001, 0.012, -0.146]
+          radius: 0.01297
+        - center: [-0.025, 0.012, -0.146]
+          radius: 0.01166
+        - center: [0.001, 0.012, -0.171]
+          radius: 0.01297
+        - center: [0.027, 0.012, -0.171]
+          radius: 0.01297
+        - center: [0.027, 0.012, -0.145]
+          radius: 0.01362
+        - center: [-0.025, 0.012, -0.171]
+          radius: 0.01362
+        - center: [0.059, -0.051, -0.16]
+          radius: 0.01362
+        - center: [0.043, -0.041, -0.117]
+          radius: 0.011
+        - center: [0.057, -0.05, -0.183]
+          radius: 0.011
+        - center: [0.05, -0.045, -0.138]
+          radius: 0.011
+        - center: [0.026, 0.016, -0.205]
+          radius: 0.01362
+        - center: [0.03, 0.009, -0.231]
+          radius: 0.011
+        - center: [0.031, 0.004, -0.251]
+          radius: 0.011
+        - center: [-0.008, 0.015, -0.207]
+          radius: 0.01362
+        - center: [-0.005, 0.011, -0.232]
+          radius: 0.011
+        - center: [-0.004, 0.007, -0.258]
+          radius: 0.011
+        - center: [-0.035, 0.005, -0.196]
+          radius: 0.01362
+        - center: [-0.035, 0.006, -0.22]
+          radius: 0.011
+        - center: [-0.027, -0.001, -0.242]
+          radius: 0.011

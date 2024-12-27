@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-1-g15f4949  Build Version: 1.6.7594.29634
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="biped_s40">
+  <link
+    name="head_camera">
+    <inertial>
+      <origin
+        xyz="-0.00630026108299819 -0.0160960633638386 -4.88215001728243E-05"
+        rpy="0 0 0" />
+      <mass
+        value="0.0170255961584928" />
+      <inertia
+        ixx="1.09182620877589E-05"
+        ixy="-1.05354237503678E-07"
+        ixz="-1.05871360812812E-08"
+        iyy="8.57178923448405E-07"
+        iyz="-1.6401848102306E-08"
+        izz="1.02869873531782E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://biped_s40/meshes/new_head_camera.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://biped_s40/meshes/new_head_camera.obj" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="head_pitch">
+    <inertial>
+      <origin
+        xyz="-0.0643985760689995 -0.0168076944928305 -0.0489794675151212"
+        rpy="0 0 0" />
+      <mass
+        value="0.658604769949703" />
+      <inertia
+        ixx="0.00140238801888669"
+        ixy="-3.06424852242863E-06"
+        ixz="-7.0608171011253E-05"
+        iyy="0.00174953220790318"
+        iyz="4.48811713621507E-06"
+        izz="0.00253034886312742" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://biped_s40/meshes/new_head.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://biped_s40/meshes/new_head.obj" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="head_pitch"
+    type="fixed">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="head_camera" />
+    <child
+      link="head_pitch" />
+    <axis
+      xyz="-0.200353538045077 0.469846310392953 0.859710942353852" />
+    <limit
+      lower="-1.57"
+      upper="1.57"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="head_yaw">
+    <inertial>
+      <origin
+        xyz="-3.77475828372553E-15 0.0124496461817263 -0.0298176941106402"
+        rpy="0 0 0" />
+      <mass
+        value="0.0290833361791932" />
+      <inertia
+        ixx="2.31088609398575E-05"
+        ixy="-8.23073984016117E-20"
+        ixz="9.70116092351009E-21"
+        iyy="2.23207774381225E-05"
+        iyz="-5.88352640523343E-06"
+        izz="2.78125851778324E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://biped_s40/meshes/new_pitch_yaw.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.67843137254902 0.654901960784314 0.827450980392157 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://biped_s40/meshes/new_pitch_yaw.obj" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="head_yaw"
+    type="continuous">
+    <origin
+      xyz="-0.0398505839612022 -0.0175000000022731 -0.103327864468996"
+      rpy="0 -0.610865238198013 0" />
+    <parent
+      link="head_pitch" />
+    <child
+      link="head_yaw" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-0.52"
+      upper="0.52"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="torso">
+    <inertial>
+      <origin
+        xyz="-0.00906254371698312 0.000433364006719505 0.152167554080273"
+        rpy="0 0 0" />
+      <mass
+        value="7.84760960877791" />
+      <inertia
+        ixx="0.0486626734126343"
+        ixy="-1.58494993744109E-05"
+        ixz="0.0032064213234161"
+        iyy="0.0394550026833284"
+        iyz="2.62625040018755E-05"
+        izz="0.0430574143666627" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://biped_s40/meshes/new_torso.obj" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://biped_s40/meshes/new_torso.obj" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="torso"
+    type="continuous">
+    <origin
+      xyz="0.0174998525199999 0 -0.501400000114722"
+      rpy="0 0 0" />
+    <parent
+      link="head_yaw" />
+    <child
+      link="torso" />
+    <axis
+      xyz="-0.038023912033266 0 0.999276829569107" />
+  </joint>
+</robot>

@@ -1,0 +1,142 @@
+robot_cfg:
+    kinematics:
+        usd_path: "robot/biped_s40/biped_s40_left_arm.usd"
+        usd_robot_root: "/biped_s40"
+        isaac_usd_path: ""
+        usd_flip_joints: {
+            "zarm_l1_joint": "Z",
+            "zarm_l2_joint": "Z",
+            "zarm_l3_joint": "Z",
+            "zarm_l4_joint": "Z",
+            "zarm_l5_joint": "Z",
+            "zarm_l6_joint": "Z",
+            "zarm_l7_joint": "Z",
+        }
+        usd_flip_joint_limits: []
+
+        urdf_path: "robot/biped_s40/biped_s40_left_arm.urdf"
+        asset_root_path: "robot/biped_s40"
+
+        base_link: "base_link"
+        ee_link: "zarm_l7_end_effector"
+        link_names: null
+        lock_joints: null
+        extra_links: null
+
+        collision_link_names: ["base_link", "zarm_l1_link", "zarm_l2_link", "zarm_l3_link", "zarm_l4_link", "zarm_l5_link", "zarm_l6_link", "zarm_l7_link"] # List[str] "base_link", 
+        collision_spheres:
+          base_link:
+            - "center": [-0.001, -0.003, 0.15085] # -0.001, -0.003, 0.204
+              "radius": 0.15085 # id: 0 
+            - "center": [0.006, -0.003, 0.311] # 0.006, 0.001, 0.431
+              "radius": 0.1545  # id: 1
+          zarm_l1_link:
+            - "center": [-0.001, -0.085, 0.001]
+              "radius": 0.04379 # id: 2
+          zarm_l2_link:
+            - "center": [0.011, -0.005, -0.004]
+              "radius": 0.0462  # id: 3
+          zarm_l3_link:
+            - "center": [-0.005, -0.0, -0.123]
+              "radius": 0.02294 # id: 4
+            - "center": [-0.003, -0.002, -0.076]
+              "radius": 0.03294 # id: 5 0.02294
+          zarm_l4_link:
+            - "center": [-0.001, 0.001, -0.021]
+              "radius": 0.04388 # id: 6 0.03388
+          zarm_l5_link:
+            - "center": [0.00049, 0.00162, 0.02032] 
+              "radius": 0.04601 # id: 7 0.03601
+          zarm_l6_link:
+            - "center": [0.00197, -0.0003, -0.03886] 
+              "radius": 0.04616 # id: 8 
+          zarm_l7_link:
+            - "center": [-0.004, -0.002, -0.093]
+              "radius": 0.06162 # id: 9  0.05162
+            - "center": [-0.003, 0.004, -0.031] # -0.003, 0.004, -0.011
+              "radius": 0.06162 # id: 10 0.05162 
+            - "center": [0.001, 0.012, -0.146]
+              "radius": 0.02297 # id: 11 0.01297
+            - "center": [-0.025, 0.012, -0.146]
+              "radius": 0.02166 # id: 12 0.01166
+            - "center": [0.001, 0.012, -0.171]
+              "radius": 0.02297 # id: 13 0.01297
+            - "center": [0.027, 0.012, -0.171]
+              "radius": 0.02297 # id: 14 0.01297
+            - "center": [0.027, 0.012, -0.145]
+              "radius": 0.02362 # id: 15 0.01362
+            - "center": [-0.025, 0.012, -0.171]
+              "radius": 0.02362 # id: 16 0.01362
+            - "center": [0.059, -0.051, -0.16]
+              "radius": 0.03362 # id: 17 0.02362
+            - "center": [0.043, -0.041, -0.117]
+              "radius": 0.031   # id: 18 0.021 
+            - "center": [0.057, -0.05, -0.183]
+              "radius": 0.031   # id: 19 0.021 
+            - "center": [0.05, -0.045, -0.138]
+              "radius": 0.031   # id: 20 0.021 
+            - "center": [0.026, 0.016, -0.205]
+              "radius": 0.03362 # id: 21 0.02362
+            - "center": [0.03, 0.009, -0.231]
+              "radius": 0.031   # id: 22 0.021 
+            - "center": [0.031, 0.004, -0.251]
+              "radius": 0.031   # id: 23 0.021 
+            - "center": [-0.008, 0.015, -0.207]
+              "radius": 0.03362 # id: 24 0.02362
+            - "center": [-0.005, 0.011, -0.232]
+              "radius": 0.031   # id: 25 0.021 
+            - "center": [-0.004, 0.007, -0.258]
+              "radius": 0.031   # id: 26 0.021 
+            - "center": [-0.035, 0.005, -0.196]
+              "radius": 0.03362 # id: 27 0.02362
+            - "center": [-0.035, 0.006, -0.22]
+              "radius": 0.031   # id: 28 0.021 
+            - "center": [-0.027, -0.001, -0.242]
+              "radius": 0.031   # id: 29 0.021 
+
+        collision_sphere_buffer: 0.005
+        extra_collision_spheres: {}
+        self_collision_ignore: {
+            "base_link":["zarm_l1_link", "zarm_l2_link", "zarm_l5_link"],
+            "zarm_l1_link": ["zarm_l1_link", "zarm_l2_link", "zarm_l3_link", "zarm_l4_link", "zarm_l5_link", "zarm_l6_link", "zarm_l7_link"],
+            "zarm_l2_link": ["zarm_l1_link", "zarm_l2_link", "zarm_l3_link", "zarm_l4_link", "zarm_l5_link", "zarm_l6_link", "zarm_l7_link"],
+            "zarm_l3_link": ["zarm_l1_link", "zarm_l2_link", "zarm_l3_link", "zarm_l4_link", "zarm_l5_link", "zarm_l6_link", "zarm_l7_link"],
+            "zarm_l4_link": ["zarm_l1_link", "zarm_l2_link", "zarm_l3_link", "zarm_l4_link", "zarm_l5_link", "zarm_l6_link", "zarm_l7_link"],
+            "zarm_l5_link": ["zarm_l1_link", "zarm_l2_link", "zarm_l3_link", "zarm_l4_link", "zarm_l5_link", "zarm_l6_link", "zarm_l7_link"],
+            "zarm_l6_link": ["zarm_l1_link", "zarm_l2_link", "zarm_l3_link", "zarm_l4_link", "zarm_l5_link", "zarm_l6_link", "zarm_l7_link"],
+            "zarm_l7_link": ["zarm_l1_link", "zarm_l2_link", "zarm_l3_link", "zarm_l4_link", "zarm_l5_link", "zarm_l6_link", "zarm_l7_link"]
+            # "base_link":["zarm_l1_link", "zarm_l2_link", "zarm_l5_link"],
+            # "zarm_l1_link": ["zarm_l2_link", "base_link"],
+            # "zarm_l2_link": ["zarm_l3_link", "zarm_l1_link"],
+            # "zarm_l3_link": ["zarm_l4_link", "zarm_l2_link"],
+            # "zarm_l4_link": ["zarm_l5_link", "zarm_l3_link"],
+            # "zarm_l5_link": ["zarm_l6_link", "zarm_l4_link"],
+            # "zarm_l6_link": ["zarm_l7_link", "zarm_l5_link"],
+            # "zarm_l7_link": ["zarm_l6_link"]
+        } # Dict[str, List[str]]
+        self_collision_buffer: {
+            # "zarm_l1_link": 0.05,
+            # "zarm_l2_link": 0.05,
+            # "zarm_l3_link": 0.05,
+            # "zarm_l4_link": 0.05,
+            # "zarm_l5_link": 0.05,
+            # "zarm_l6_link": 0.05,
+            # "zarm_l7_link": 0.05
+        } # Dict[str, float]
+
+        use_global_cumul: True
+        mesh_link_names: [
+            "zarm_l1_link", "zarm_l2_link", "zarm_l3_link", "zarm_l4_link", "zarm_l5_link", "zarm_l6_link", "zarm_l7_link"
+        ] # List[str]
+
+        lock_joints: null
+        extra_links: {"attached_object":{"parent_link_name": "zarm_l7_link" , "link_name": "attached_object", "fixed_transform": [0,0,0,1,0,0,0], "joint_type":"FIXED","joint_name": "attach_joint" }}
+        cspace:
+            joint_names: ['zarm_l1_joint', 'zarm_l2_joint', 'zarm_l3_joint', 'zarm_l4_joint', 'zarm_l5_joint', 'zarm_l6_joint', 'zarm_l7_joint']
+            # [0.34, 0.87, 0.17, -1.22, -0.34, -0.52, 0.00]
+            # [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00] 
+            retract_config:  [0.00, 1.57, 0.00, 0.00, 0.00, 0.00, 0.00] 
+            null_space_weight:  [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+            cspace_distance_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+            max_jerk: 500.0
+            max_acceleration: 15.0

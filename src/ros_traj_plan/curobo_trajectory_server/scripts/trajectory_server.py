@@ -49,11 +49,11 @@ import threading
 
 class CumotionActionServer:
     def __init__(self):
-        rospy.init_node('trajectory_server', anonymous=True)
+        rospy.init_node('trajectory_server_node', anonymous=True)
 
         # Declare and initialize parameters
         self.tensor_args = TensorDeviceType()
-        self.robot_config = rospy.get_param('~robot', 'biped_s40.yml')
+        self.robot_config = rospy.get_param('~robot', '/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/kuavo_assets/biped_s40/urdf/biped_s40.yml')
         self.time_dilation_factor = rospy.get_param('~time_dilation_factor', 1.0)
         self.collision_cache_mesh = rospy.get_param('~collision_cache_mesh', 20)
         self.collision_cache_cuboid = rospy.get_param('~collision_cache_cuboid', 20)
@@ -69,7 +69,7 @@ class CumotionActionServer:
         self.tool_frame = rospy.get_param('~tool_frame', None)
         self.grid_position = rospy.get_param('~grid_position', [0.0, 0.0, 0.0])
         self.esdf_service_name = rospy.get_param('~esdf_service_name', '/nvblox_node/get_esdf_and_gradient')
-        self.urdf_path = rospy.get_param('~urdf_path', None)
+        self.urdf_path = rospy.get_param('~urdf_path', '/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/kuavo_assets/biped_s40/urdf/biped_s40_left_arm.urdf')
         self.enable_debug_mode = rospy.get_param('~enable_curobo_debug_mode', False)
         self.add_ground_plane = rospy.get_param('~add_ground_plane', False)
         self.override_moveit_scaling_factors = rospy.get_param('~override_moveit_scaling_factors', True)

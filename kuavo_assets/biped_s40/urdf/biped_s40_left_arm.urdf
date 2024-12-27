@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot name="biped_s40">
+
+    <link name="torso">
+      <inertial>
+          <origin xyz="0 0 0" rpy="0 0 0" />
+          <mass value="0" />
+          <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
+      </inertial>
+    </link>
+    <joint name="torso" type="fixed">
+      <parent link="torso" />
+      <child link="base_link" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+    </joint>
+
+    <link name="base_link">
+        <inertial>
+            <origin xyz="-0.0131642143292668 -0.00101855461920045 0.120968817067497" rpy="0 0 0" />
+            <mass value="17.7538790248349" />
+            <inertia ixx="0.109513413578877" ixy="-3.84263402967609E-06" ixz="0.002072229236261" iyy="0.0639718644540955" iyz="5.94596039793819E-06" izz="0.0796086142464887" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://biped_s40/meshes/torso.obj" />
+            </geometry>
+            <material name="">
+                <color rgba="1 1 1 1" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://biped_s40/meshes/torso.obj" />
+            </geometry>
+        </collision>
+    </link>
+
+    <!-- 左手--> 
+    <link name="zarm_l1_link">
+        <inertial>
+            <origin xyz="0.0146835191418715 -0.0166604103758634 -6.82857133369463E-05" rpy="0 0 0" />
+            <mass value="0.165847319965906" />
+            <inertia ixx="0.0002674432873971" ixy="-2.5654089149164E-05" ixz="-1.72966133127557E-07" iyy="0.000125796784291983" iyz="-1.66717296343014E-06" izz="0.000196186976742156" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://biped_s40/meshes/l_arm_pitch.obj" />
+            </geometry>
+            <material name="">
+                <color rgba="1 1 1 1" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://biped_s40/meshes/l_arm_pitch.obj" />
+            </geometry>
+        </collision>
+    </link>
+    <joint name="zarm_l1_joint" type="revolute">
+        <origin xyz="-0.0175475823124921 0.254700000000031 0.324500000000024" rpy="0 0 0" />
+        <parent link="base_link" />
+        <child link="zarm_l1_link" />
+        <axis xyz="0 1 0" />
+        <limit velocity="1" effort="20" lower="-3.14159"  upper="0.523599" /> 
+    </joint>
+
+    <link name="zarm_l2_link">
+        <inertial>
+            <origin xyz="0.0222872651779294 0.0156945544195443 -0.0202262244341467" rpy="0 0 0" />
+            <mass value="0.14142658141305" />
+            <inertia ixx="0.000160370067223078" ixy="6.30811840859276E-06" ixz="-1.13259246453472E-05" iyy="0.000262365778589952" iyz="3.14941259087025E-05" izz="0.000236014036281963" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://biped_s40/meshes/l_arm_roll.obj" />
+            </geometry>
+            <material name="">
+                <color rgba="1 1 1 1" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://biped_s40/meshes/l_arm_roll.obj" />
+            </geometry>
+        </collision>
+    </link>
+    <joint name="zarm_l2_joint" type="revolute">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <parent link="zarm_l1_link" />
+        <child link="zarm_l2_link" />
+        <axis xyz="1 0 0" />
+        <limit velocity="1" effort="20" lower="-0.349066" upper="2.0944" /> 
+    </joint>
+
+    <link name="zarm_l3_link">
+        <inertial>
+            <origin xyz="6.16940440653045E-05 0.00525815062787316 -0.12882194485465" rpy="0 0 0" />
+            <mass value="0.147794102819133" />
+            <inertia ixx="7.00575957554695E-05" ixy="-6.81658230071221E-10" ixz="2.6942707856767E-10" iyy="8.53612265336774E-05" iyz="6.95899873075697E-06" izz="8.82223899453282E-05" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://biped_s40/meshes/l_arm_yaw.obj" />
+            </geometry>
+            <material name="">
+                <color rgba="1 1 1 1" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://biped_s40/meshes/l_arm_yaw.obj" />
+            </geometry>
+        </collision>
+    </link>
+    <joint name="zarm_l3_joint" type="revolute">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <parent link="zarm_l2_link" />
+        <child link="zarm_l3_link" />
+        <axis xyz="0 0 1" />
+        <limit velocity="1" effort="20" lower="-1.5708" upper="1.5708" />
+    </joint>
+
+    <link name="zarm_l4_link">
+        <inertial>
+            <origin xyz="-1.42819297162602E-05 0.00938313949963104 -0.0522687552263907" rpy="0 0 0" />
+            <mass value="0.170164726102014" />
+            <inertia ixx="9.55808447606964E-05" ixy="-4.53863489155473E-08" ixz="5.39342118114986E-08" iyy="0.000126326373178401" iyz="-9.58160032696802E-06" izz="0.000121032474884244" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://biped_s40/meshes/l_forearm_pitch.obj" />
+            </geometry>
+            <material name="">
+                <color rgba="1 1 1 1" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://biped_s40/meshes/l_forearm_pitch.obj" />
+            </geometry>
+        </collision>
+    </link>
+    <joint name="zarm_l4_joint" type="revolute">
+        <origin xyz="0 0 -0.163599999999996" rpy="0 0 0" />
+        <parent link="zarm_l3_link" />
+        <child link="zarm_l4_link" />
+        <axis xyz="0 1 0" />
+        <limit velocity="1" effort="20" lower="-1.5708" upper="0" /> 
+    </joint>
+
+    <link name="zarm_l5_link">
+        <inertial>
+            <origin xyz="0.000113131262875685 0.00969728110559553 0.0227960708688583" rpy="0 0 0" />
+            <mass value="0.157336277379834" />
+            <inertia ixx="7.64923971357921E-05" ixy="8.51207618055666E-09" ixz="-1.40676645868301E-08" iyy="0.000122231121933325" iyz="1.11226992393513E-06" izz="8.44934959384744E-05" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://biped_s40/meshes/l_hand_yaw.obj" />
+            </geometry>
+            <material name="">
+                <color rgba="1 1 1 1" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://biped_s40/meshes/l_hand_yaw.obj" />
+            </geometry>
+        </collision>
+    </link>
+    <joint name="zarm_l5_joint" type="revolute">
+        <origin xyz="0 0 -0.132050000118071" rpy="0 0 0" />
+        <parent link="zarm_l4_link" />
+        <child link="zarm_l5_link" />
+        <limit velocity="1" effort="20" lower="-1.5708" upper="1.5708" />
+        <axis xyz="0 0 1" />
+    </joint>
+
+    <link name="zarm_l6_link">
+        <inertial>
+            <origin xyz="0.00810609772930763 0.00490163171050539 -0.0527751110917489" rpy="0 0 0" />
+            <mass value="0.0853891779246004" />
+            <inertia ixx="4.77321490368476E-05" ixy="3.05261917457108E-06" ixz="4.77827164947653E-06" iyy="3.43814769749137E-05" iyz="-4.59311499587152E-06" izz="2.49955336560133E-05" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://biped_s40/meshes/l_hand_pitch.obj" />
+            </geometry>
+            <material name="">
+                <color rgba="1 1 1 1" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://biped_s40/meshes/l_hand_pitch.obj" />
+            </geometry>
+        </collision>
+    </link>
+    <joint name="zarm_l6_joint" type="revolute">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <parent link="zarm_l5_link" />
+        <child link="zarm_l6_link" />
+        <axis xyz="0 1 0" />
+        <limit velocity="1" effort="20" lower="-1.5708" upper="1.5708" /> 
+    </joint>
+
+    <link name="zarm_l7_link">
+        <inertial>
+            <origin xyz="0.00396050555698803 0.00946265387749012 -0.066602176591173" rpy="0 0 0" />
+            <mass value="0.151352919071109" />
+            <inertia ixx="9.13246737942629E-05" ixy="3.25649345932988E-07" ixz="-4.78728976781085E-06" iyy="0.000139866613946359" iyz="1.1925397914412E-05" izz="0.000125082116428502" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://biped_s40/meshes/new_l_hand_roll.obj" />
+            </geometry>
+            <material name="">
+                <color rgba="1 1 1 1" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="package://biped_s40/meshes/new_l_hand_roll.obj" />
+            </geometry>
+        </collision>
+    </link>
+    <joint name="zarm_l7_joint" type="revolute">
+        <origin xyz="0 0 -0.058999997180792" rpy="0 0 0" />
+        <parent link="zarm_l6_link" />
+        <child link="zarm_l7_link" />
+        <axis xyz="1 0 0" />
+        <limit velocity="1" effort="20" lower="-1.5708" upper="1.5708" />
+    </joint>
+
+    <link name="zarm_l7_end_effector">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <sphere radius="0.001"/>
+            </geometry>
+            <material name="">
+                <color rgba="1 1 1 1" />
+            </material>
+        </visual>
+    </link>
+    <joint name="zarm_l7_joint_end_effector" type="fixed">
+        <origin xyz="0.00 -0.03 -0.17" rpy="0 0 0" />
+        <parent link="zarm_l7_link" />
+        <child link="zarm_l7_end_effector" />
+    </joint>
+</robot>
+
