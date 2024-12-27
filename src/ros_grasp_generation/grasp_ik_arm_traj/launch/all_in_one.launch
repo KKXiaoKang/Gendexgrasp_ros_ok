@@ -1,0 +1,42 @@
+<launch>
+    <!-- Declare and pass parameters to sensor_robot_enable.launch -->
+    <arg name="use_nvidia_foundation" default="false" />
+    <arg name="use_cumotion_traj" default="false" />
+    
+    <!-- 启动机器人抓取相关功能 -->
+    <!-- <include file="$(find grasp_ik_arm_traj)/launch/view_d435_model.launch" /> -->
+
+    <include file="$(find grasp_ik_arm_traj)/launch/robot_grasp_one_start.launch" >
+        <arg name="use_nvidia_foundation" value="$(arg use_nvidia_foundation)" />
+    </include>
+
+    <!-- Pass the parameters to sensor_robot_enable.launch -->
+    <include file="$(find grasp_ik_arm_traj)/launch/sensor_robot_enable.launch">
+        <arg name="use_nvidia_foundation" value="$(arg use_nvidia_foundation)" />
+        <arg name="use_cumotion_traj" value="$(arg use_cumotion_traj)" />
+    </include>
+
+    <include file="$(find grasp_ik_arm_traj)/launch/robot_visualize.launch" >
+        <arg name="visualize" value="true" />
+    </include>
+
+    <!-- <include file="$(find ros_gendexgrasp)/launch/gendexgrasp_ros_service.launch" /> -->
+    <!-- <include file="$(find ros_gendexgrasp)/launch/gendexgrasp_ros_docker.launch" /> -->
+
+    <!-- 启动抓取过滤节点 -->
+    <node pkg="grasp_filter_gendex" type="grasp_filter_node.py" name="grasp_filter_node" output="screen">
+        <param name="use_nvidia_foundation" value="$(arg use_nvidia_foundation)" />
+    </node>
+    
+    <!-- 启动姿态估计节点 -->
+    <!-- <include file="$(find pose_6estimator)/launch/ros_pose_6estimator.launch" /> -->
+
+    <!-- 启动头部采集数据服务端-->
+    <node name="robot_camera_watch_around" pkg="grasp_ik_arm_traj" type="robot_camera_single_around.py" output="screen" />
+        
+    <!-- 启动避障轨迹转发 -->
+    <!-- <node name="robot_avoidance_traj_bridge" pkg="grasp_ik_arm_traj" type="avoidance_traj_bridge.py" output="screen" /> -->
+
+    <!-- 启动避障轨迹转发 -->
+    <node name="robot_avoidance_traj_bridge" pkg="grasp_ik_arm_traj" type="avoidance_pose_bridge.py" output="screen" />
+</launch>

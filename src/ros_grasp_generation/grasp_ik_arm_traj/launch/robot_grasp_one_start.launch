@@ -1,0 +1,24 @@
+<launch>
+    <!-- 接收参数 -->
+    <arg name="use_nvidia_foundation" default="false" />
+
+    <!-- 启动抓取姿态可视化Marker节点 -->
+    <node name="grasp_pose_marker_node" pkg="grasp_pose_visualizer" type="grasp_pose_marker.py" output="screen">
+        <!-- 这里可以添加任何需要的参数 -->
+    </node>
+
+    <!-- 启动目标位置可视化Marker节点 -->
+    <node name="object_pose_visualizer_node" pkg="object_pose_visualizer" type="object_pose_visualizer_node.py" output="screen">
+        <param name="use_nvidia_foundation" value="$(arg use_nvidia_foundation)" />
+    </node>
+    
+    <!-- 启动抓取ik逆解前姿态可视化节点并发布姿态到ik -->
+    <node name="grasp_to_ik_node" pkg="grasp_ik_arm_traj" type="grasp_to_ik_node.py" output="screen">
+        <!-- 这里可以添加任何需要的参数 -->
+    </node>
+
+    <!-- 将抓取的实际命令传输给实物控制服务调用 -->
+    <node name="hand_sdk_control_server" pkg="hand_sdk_control" type="hand_sdk_control_server.py" output="screen">
+        <!-- 这里可以添加任何需要的参数 -->
+    </node>
+</launch>

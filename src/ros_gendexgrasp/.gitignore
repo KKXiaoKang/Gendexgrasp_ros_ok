@@ -1,0 +1,14 @@
+# ignore logs_gen file
+logs_gen/
+
+logs_inf_cvae/
+
+leju_hand_urdf_ws/
+
+logs_ros_inf_cvae/
+
+logs_ros_gen/
+
+# Ignore Python bytecode files
+*.pyc
+__pycache__/

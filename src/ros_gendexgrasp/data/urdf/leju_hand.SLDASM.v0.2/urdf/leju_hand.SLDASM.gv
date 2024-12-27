@@ -1,0 +1,50 @@
+digraph G {
+node [shape=box];
+"base_link" [label="base_link"];
+"index1" [label="index1"];
+"index2" [label="index2"];
+"index3" [label="index3"];
+"little1" [label="little1"];
+"little2" [label="little2"];
+"little3" [label="little3"];
+"middle1" [label="middle1"];
+"middle2" [label="middle2"];
+"middle3" [label="middle3"];
+"ring1" [label="ring1"];
+"ring2" [label="ring2"];
+"ring3" [label="ring3"];
+"thumb1" [label="thumb1"];
+"thumb2" [label="thumb2"];
+"thumb3" [label="thumb3"];
+node [shape=ellipse, color=blue, fontcolor=blue];
+"base_link" -> "index1" [label="xyz: 0.026018 -0.033038 0.083761 \nrpy: 1.5708 -0 0"]
+"index1" -> "index1"
+"index1" -> "index2" [label="xyz: 0 0 -0.035 \nrpy: 0 -0 0"]
+"index2" -> "index2"
+"index2" -> "index3" [label="xyz: 0 0 -0.035 \nrpy: 0 -0 0"]
+"index3" -> "index3"
+"base_link" -> "little1" [label="xyz: 0.026018 -0.033038 0.014761 \nrpy: 1.5708 -0 0"]
+"little1" -> "little1"
+"little1" -> "little2" [label="xyz: 0 0 -0.03 \nrpy: 0 -0 0"]
+"little2" -> "little2"
+"little2" -> "little3" [label="xyz: 0 0 -0.03 \nrpy: 0 -0 0"]
+"little3" -> "little3"
+"base_link" -> "middle1" [label="xyz: 0.026018 -0.033038 0.060761 \nrpy: 1.5708 -0 0"]
+"middle1" -> "middle1"
+"middle1" -> "middle2" [label="xyz: 0 0 -0.042 \nrpy: 0 -0 0"]
+"middle2" -> "middle2"
+"middle2" -> "middle3" [label="xyz: 0.00079749 0 -0.041992 \nrpy: 0 -0 0"]
+"middle3" -> "middle3"
+"base_link" -> "ring1" [label="xyz: 0.026018 -0.033038 0.038162 \nrpy: 1.5708 -0 0"]
+"ring1" -> "ring1"
+"ring1" -> "ring2" [label="xyz: 0 0 -0.035 \nrpy: 0 -0 0"]
+"ring2" -> "ring2"
+"ring2" -> "ring3" [label="xyz: 0 0 -0.035 \nrpy: 0 -0 0"]
+"ring3" -> "ring3"
+"base_link" -> "thumb1" [label="xyz: 0.024018 -0.059299 0.065761 \nrpy: 1.5708 -0 0"]
+"thumb1" -> "thumb1"
+"thumb1" -> "thumb2" [label="xyz: -0.022167 0.042997 -0.0082311 \nrpy: 0.61548 0.5236 -0.61548"]
+"thumb2" -> "thumb2"
+"thumb2" -> "thumb3" [label="xyz: 0 0.0022981 -0.035 \nrpy: 0 -0 0"]
+"thumb3" -> "thumb3"
+}

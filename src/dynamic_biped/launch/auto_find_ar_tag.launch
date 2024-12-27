@@ -1,0 +1,59 @@
+<launch>
+    <!-- 定义模型路径选项 -->
+    <arg name = "using_s42" default = "true"/>
+
+    <!-- 4pro模型 -->
+    <arg name="model" if="$(arg using_s42)" default="$(find biped_s42)/urdf/biped_s42_head.urdf"/>
+
+    <!-- 4代模型 -->
+    <!-- <arg name="model" default="$(find biped_s4)/urdf/biped_s4_head.urdf"/> -->
+    <arg name="model" unless="$(arg using_s42)" default="$(find biped_s4)/urdf/biped_s4_head.urdf"/>
+
+    <arg name="rvizconfig" default="$(find dynamic_biped)/biped_s4_head.rviz" />
+
+    <!-- 发布机器人描述 -->
+    <param name="robot_description" command="$(find xacro)/xacro $(arg model)" />
+
+
+
+    <!-- <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" /> -->
+
+    <!-- <node name="joint_state_publisher" pkg="ar_control" type="pub_joint_states.py" /> -->
+
+    <node name="joint_state_republisher" pkg="dynamic_biped" type="joint_state_republisher" output="screen" />
+    <!-- 启动 robot_state_publisher，用于发布TF树 -->
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+
+    <!-- 启动 RViz，并加载指定的配置文件 -->
+    <node name="head_rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
+
+    <!-- Launch realsense2_camera for head camera -->
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch" >
+        <arg name="color_width"   value="640"/>
+        <arg name="color_height"  value="480"/>
+        <arg name="color_fps"     value="30"/>
+        <arg name="depth_width"   value="848"/>
+        <arg name="depth_height"  value="480"/>
+        <arg name="depth_fps"     value="30"/>
+        <arg name="enable_infra"        default="false"/>
+        <arg name="enable_infra1"       default="false"/>
+        <arg name="enable_infra2"       default="false"/>
+        <arg name="enable_sync"   value="true"/>
+        <arg name="align_depth"   value="true"/>
+        <arg name="enable_pointcloud"   value="true"/>
+    </include>
+
+    <!-- tf2_ros 静态转换 发布urdf里面的head_camera 和 相机坐标系下的camera_link 进行对齐 -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="camera_to_real_frame" args="0 0 0 0 0 0 head_camera camera_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="base_link_to_torso" args="0 0 0 0 0 0 base_link torso" />
+ 
+    <!-- 启动 apriltag_ros continuous_detection -->
+    <include file="$(find apriltag_ros)/launch/continuous_detection.launch">
+      <arg name="camera_name" value="/camera/color" />
+      <arg name="image_topic" value="image_raw" />
+    </include>
+
+    <!-- 启动 ARControlNode -->
+    <node pkg="ar_control" type="ar_control_node.py" name="ar_control_node" output="screen" respawn="true" respawn_delay="5" />
+
+</launch>

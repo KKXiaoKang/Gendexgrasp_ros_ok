@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-1-g15f4949  Build Version: 1.6.7594.29634
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="HEAD_URDF">
+  <link
+    name="camera">
+    <inertial>
+      <origin
+        xyz="-0.00550944340867918 -0.0160960721500232 -4.88215811400572E-05"
+        rpy="0 0 0" />
+      <mass
+        value="0.0170256015508834" />
+      <inertia
+        ixx="1.0918264029313E-05"
+        ixy="-1.05354408167889E-07"
+        ixz="-1.05871497323813E-08"
+        iyy="8.57178950734466E-07"
+        iyz="-1.64018651463449E-08"
+        izz="1.02869893338382E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://HEAD_URDF/meshes/camera.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://HEAD_URDF/meshes/camera.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="head">
+    <inertial>
+      <origin
+        xyz="-0.0535762938662548 -0.0181112420216993 -0.0476953061890916"
+        rpy="0 0 0" />
+      <mass
+        value="0.604629406788578" />
+      <inertia
+        ixx="0.00181008219778909"
+        ixy="-2.40820895846267E-06"
+        ixz="0.0003410833557361"
+        iyy="0.00215799915569422"
+        iyz="1.40949304876347E-05"
+        izz="0.00233758460713716" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://HEAD_URDF/meshes/head.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://HEAD_URDF/meshes/head.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="head"
+    type="fixed">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="camera" />
+    <child
+      link="head" />
+    <axis
+      xyz="-0.962675870126772 -0.241313119160401 0.122568950377897" />
+  </joint>
+  <link
+    name="pitch motor">
+    <inertial>
+      <origin
+        xyz="2.15064692383644E-05 0.00604886461125074 -0.0105235281817422"
+        rpy="0 0 0" />
+      <mass
+        value="0.0736988170113863" />
+      <inertia
+        ixx="3.67348067267301E-05"
+        ixy="6.73619780107625E-08"
+        ixz="-2.37137268467872E-08"
+        iyy="4.13511095677439E-05"
+        iyz="-7.39465521015506E-06"
+        izz="3.68282513893848E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://HEAD_URDF/meshes/pitch motor.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://HEAD_URDF/meshes/pitch motor.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="pitch motor"
+    type="continuous">
+    <origin
+      xyz="-0.0262945673370713 -0.0175003248712457 -0.156631965307743"
+      rpy="0 -0.488692190558412 0" />
+    <parent
+      link="head" />
+    <child
+      link="pitch motor" />
+    <axis
+      xyz="0 -1 0" />
+  </joint>
+  <link
+    name="torso">
+    <inertial>
+      <origin
+        xyz="-0.00781858405002022 0.00178984260802815 0.226284657258711"
+        rpy="0 0 0" />
+      <mass
+        value="4.90257525359053" />
+      <inertia
+        ixx="0.0173360306540759"
+        ixy="-4.76612424157822E-07"
+        ixz="5.38764914949294E-05"
+        iyy="0.0163789779493019"
+        iyz="-1.05330332602736E-05"
+        izz="0.0165850479903377" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://HEAD_URDF/meshes/torso.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://HEAD_URDF/meshes/torso.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="torso"
+    type="continuous">
+    <origin
+      xyz="0.0184998524551651 0 -0.601400000086136"
+      rpy="0 0 0" />
+    <parent
+      link="pitch motor" />
+    <child
+      link="torso" />
+    <axis
+      xyz="-0.033023329792535 0 0.999454581103652" />
+  </joint>
+</robot>

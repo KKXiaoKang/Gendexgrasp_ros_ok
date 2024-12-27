@@ -1,0 +1,7 @@
+<launch>
+    <!-- 启动 ros1_bridge -->
+    <include file="$(find ros_bridge_python)/launch/start_ros1_bridge.launch" />
+
+    <!-- 启动 realsense2_description -->
+    <include file="$(find realsense2_description)/launch/view_d435_model.launch" />
+</launch>

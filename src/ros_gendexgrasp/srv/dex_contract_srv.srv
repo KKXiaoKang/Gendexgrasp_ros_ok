@@ -1,0 +1,5 @@
+Header header
+uint8 seed_num
+int32 contact_num
+---
+bool result 

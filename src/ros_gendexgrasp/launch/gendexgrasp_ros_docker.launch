@@ -1,0 +1,4 @@
+<launch>
+    <!-- 启动 Contact模块 和 Grasp模块 服务器 -->
+    <node pkg="ros_gendexgrasp" type="launch_docker.py" name="gendex_contact_service_node" output="screen" />
+</launch>

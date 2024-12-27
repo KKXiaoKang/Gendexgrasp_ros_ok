@@ -1,0 +1,41 @@
+<launch>
+    <!-- Declare the use_nvidia_foundation and use_cumotion_traj parameters with default values -->
+    <arg name="use_nvidia_foundation" default="false" />
+    <arg name="use_cumotion_traj" default="false" />
+
+    <!-- tf2_ros 静态转换 发布urdf里面的head_camera 和 相机坐标系下的camera_link 进行对齐 -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="camera_to_real_frame_1" args="0 0 0 0 0 0 head_camera camera_base_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="camera_to_real_frame_2" args="0 0 0 0 0 0 head_camera camera_link" />
+    
+    <!-- Conditional node launch based on the use_nvidia_foundation parameter -->
+    <group if="$(arg use_nvidia_foundation)">
+        <!-- Launch the Nvidia foundation if the parameter is true -->
+        <node pkg="ros_nvidia_foundation" type="foundation_detection_node" name="nvidia_foundation_detection_node" output="screen" />
+    </group>
+
+    <!-- If use_nvidia_foundation is false, launch the YOLO related nodes -->
+    <group unless="$(arg use_nvidia_foundation)">
+        <node pkg="kuavo_vision_object" type="realsense_yolo_segment_ros.py" name="realsense_yolo_segment_node" output="screen"/>
+        <node pkg="kuavo_vision_object" type="realsense_yolo_transform_torso.py" name="realsense_yolo_transform_torso_node" output="screen"/>
+    </group>
+
+    <!-- Conditional node launch based on the use_cumotion_traj parameter -->
+    <group unless="$(arg use_cumotion_traj)">
+        <!-- Launch realsense2_camera nodes only if use_cumotion_traj is false -->
+        <include file="$(find realsense2_camera)/launch/rs_camera.launch" >
+            <arg name="color_width"   value="640"/>
+            <arg name="color_height"  value="480"/>
+            <arg name="color_fps"     value="60"/>
+            <arg name="depth_width"   value="640"/>
+            <arg name="depth_height"  value="480"/>
+            <arg name="depth_fps"     value="60"/>
+            <arg name="enable_infra"        default="false"/>
+            <arg name="enable_infra1"       default="false"/>
+            <arg name="enable_infra2"       default="false"/>
+            <arg name="enable_sync"   value="true"/>
+            <arg name="align_depth"   value="true"/>
+            <arg name="enable_pointcloud"   value="true"/>
+        </include>
+    </group>
+
+</launch>

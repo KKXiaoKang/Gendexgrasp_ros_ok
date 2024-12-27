@@ -1,0 +1,917 @@
+<?xml version="1.0" ?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="leju_hand.SLDASM">
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="0.0248152821153991 0.0540284706191432 0.0702301400520133"
+        rpy="0 0 0" />
+      <mass
+        value="0.164225201885736" />
+      <inertia
+        ixx="0.000185117096711317"
+        ixy="3.35000782164808E-07"
+        ixz="-2.16255122871351E-06"
+        iyy="8.64741710242579E-05"
+        iyz="2.24295586682671E-05"
+        izz="0.000117564522990156" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 0.6 0.6 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="thumb1">
+    <inertial>
+      <origin
+        xyz="-0.000983911711046163 0.0344704863733602 0.0368838917816058"
+        rpy="0 0 0" />
+      <mass
+        value="0.0564019014158436" />
+      <inertia
+        ixx="2.37095016898147E-05"
+        ixy="5.79708748876763E-08"
+        ixz="-2.08874689884313E-07"
+        iyy="1.35787665730408E-05"
+        iyz="7.2149597295717E-06"
+        izz="1.95031663378398E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/thumb1.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 0.6 0.6 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/thumb1.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="thumb1"
+    type="revolute">
+    <origin
+      xyz="0.024018 -0.059299 0.065761"
+      rpy="1.5708 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="thumb1" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-1.5708"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="thumb2">
+    <inertial>
+      <origin
+        xyz="-0.000575733396408332 0.0337331258814012 -0.0181486565927319"
+        rpy="0 0 0" />
+      <mass
+        value="0.00821021679962066" />
+      <inertia
+        ixx="9.41305938370482E-07"
+        ixy="-3.97046694025453E-23"
+        ixz="-6.27413287970094E-08"
+        iyy="8.21295376999865E-07"
+        iyz="2.38228016415272E-22"
+        izz="4.66470295449127E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/thumb2.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 0.6 0.6 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/thumb2.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="thumb2"
+    type="revolute">
+    <origin
+      xyz="-0.022167 0.042997 -0.0082311"
+      rpy="0.61548 0.5236 -0.61548" />
+    <parent
+      link="thumb1" />
+    <child
+      link="thumb2" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.5708"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="thumb3">
+    <inertial>
+      <origin
+        xyz="1.72457767826928E-05 0.031434929360531 -0.0178306972495317"
+        rpy="0 0 0" />
+      <mass
+        value="0.00837443117226878" />
+      <inertia
+        ixx="7.99384879552867E-07"
+        ixy="-1.21143264415252E-13"
+        ixz="1.41505793351702E-08"
+        iyy="7.118372401867E-07"
+        iyz="-1.43967952867614E-11"
+        izz="4.19442878449958E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/thumb3.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 0.6 0.6 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/thumb3.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="thumb3"
+    type="revolute">
+    <origin
+      xyz="0 0.0022981 -0.035"
+      rpy="0 0 0" />
+    <parent
+      link="thumb2" />
+    <child
+      link="thumb3" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.5708"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="index1">
+    <inertial>
+      <origin
+        xyz="-0.000575733396408262 0.00999999999999997 -0.0181486565927314"
+        rpy="0 0 0" />
+      <mass
+        value="0.00821021679962066" />
+      <inertia
+        ixx="9.41305938370482E-07"
+        ixy="3.69141838854441E-23"
+        ixz="-6.27413287970098E-08"
+        iyy="8.21295376999864E-07"
+        iyz="3.93687644286624E-22"
+        izz="4.66470295449127E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/index1.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 0.6 0.6 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/index1.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="index1"
+    type="revolute">
+    <origin
+      xyz="0.026018 -0.033038 0.083761"
+      rpy="1.5708 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="index1" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.5708"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="index2">
+    <inertial>
+      <origin
+        xyz="-0.000575733396408255 0.00999999999999997 -0.0181486565927314"
+        rpy="0 0 0" />
+      <mass
+        value="0.00821021679962067" />
+      <inertia
+        ixx="9.41305938370482E-07"
+        ixy="3.38670587382707E-23"
+        ixz="-6.27413287970098E-08"
+        iyy="8.21295376999864E-07"
+        iyz="3.85686941723071E-22"
+        izz="4.66470295449127E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/index2.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 0.6 0.6 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/index2.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="index2"
+    type="revolute">
+    <origin
+      xyz="0 0 -0.035"
+      rpy="0 0 0" />
+    <parent
+      link="index1" />
+    <child
+      link="index2" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.5708"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="index3">
+    <inertial>
+      <origin
+        xyz="1.72453593307378E-05 0.00999987615947373 -0.0178306942876202"
+        rpy="0 0 0" />
+      <mass
+        value="0.00837442341391307" />
+      <inertia
+        ixx="7.99384128506354E-07"
+        ixy="-1.80415329094167E-13"
+        ixz="1.41507581790986E-08"
+        iyy="7.1183828734224E-07"
+        iyz="-1.63053988310892E-11"
+        izz="4.19440979887662E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/index3.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 0.6 0.6 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/index3.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="index3"
+    type="revolute">
+    <origin
+      xyz="0 0 -0.035"
+      rpy="0 0 0" />
+    <parent
+      link="index2" />
+    <child
+      link="index3" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.5708"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="middle1">
+    <inertial>
+      <origin
+        xyz="-0.000477422239856772 0.01 -0.0214927882427889"
+        rpy="0 0 0" />
+      <mass
+        value="0.0104502167996206" />
+      <inertia
+        ixx="1.55194279531872E-06"
+        ixy="-2.3695484321303E-23"
+        ixz="-7.59193058568366E-08"
+        iyy="1.40612552869482E-06"
+        iyz="-5.95490509869179E-22"
+        izz="5.86986923529186E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/middle1.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 0.6 0.6 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/middle1.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="middle1"
+    type="revolute">
+    <origin
+      xyz="0.026018 -0.033038 0.060761"
+      rpy="1.5708 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="middle1" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.5708"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="middle2">
+    <inertial>
+      <origin
+        xyz="-0.000477422239856768 0.01 -0.0214927882427889"
+        rpy="0 0 0" />
+      <mass
+        value="0.0104502167996206" />
+      <inertia
+        ixx="1.55194279531872E-06"
+        ixy="-2.7993599267876E-23"
+        ixz="-7.59193058568367E-08"
+        iyy="1.40612552869482E-06"
+        iyz="-5.96468374525079E-22"
+        izz="5.86986923529186E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/middle2.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 0.6 0.6 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/middle2.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="middle2"
+    type="revolute">
+    <origin
+      xyz="0 0 -0.042"
+      rpy="0 0 0" />
+    <parent
+      link="middle1" />
+    <child
+      link="middle2" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.5708"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="middle3">
+    <inertial>
+      <origin
+        xyz="-0.000780243111236988 0.00999987615947375 -0.0178382662542317"
+        rpy="0 0 0" />
+      <mass
+        value="0.00837442341391307" />
+      <inertia
+        ixx="7.99384128506354E-07"
+        ixy="-1.80415328948957E-13"
+        ixz="1.41507581790986E-08"
+        iyy="7.1183828734224E-07"
+        iyz="-1.63053988309345E-11"
+        izz="4.19440979887662E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/middle3.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 0.6 0.6 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/middle3.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="middle3"
+    type="revolute">
+    <origin
+      xyz="0.00079749 0 -0.041992"
+      rpy="0 0 0" />
+    <parent
+      link="middle2" />
+    <child
+      link="middle3" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.5708"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="ring1">
+    <inertial>
+      <origin
+        xyz="-0.000575733396408259 0.00999999999999997 -0.0181486565927314"
+        rpy="0 0 0" />
+      <mass
+        value="0.00821021679962066" />
+      <inertia
+        ixx="9.41305938370482E-07"
+        ixy="2.55652510157116E-23"
+        ixz="-6.27413287970098E-08"
+        iyy="8.21295376999864E-07"
+        iyz="3.95616636513265E-22"
+        izz="4.66470295449127E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/ring1.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 0.6 0.6 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/ring1.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="ring1"
+    type="revolute">
+    <origin
+      xyz="0.026018 -0.033038 0.038162"
+      rpy="1.5708 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="ring1" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.5708"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="ring2">
+    <inertial>
+      <origin
+        xyz="-0.000575733396408255 0.00999999999999997 -0.0181486565927314"
+        rpy="0 0 0" />
+      <mass
+        value="0.00821021679962067" />
+      <inertia
+        ixx="9.41305938370482E-07"
+        ixy="1.63913986253195E-23"
+        ixz="-6.27413287970099E-08"
+        iyy="8.21295376999864E-07"
+        iyz="3.15968001867774E-22"
+        izz="4.66470295449127E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/ring2.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 0.6 0.6 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/ring2.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="ring2"
+    type="revolute">
+    <origin
+      xyz="0 0 -0.035"
+      rpy="0 0 0" />
+    <parent
+      link="ring1" />
+    <child
+      link="ring2" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.5708"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="ring3">
+    <inertial>
+      <origin
+        xyz="1.72453593307274E-05 0.00999987615947372 -0.0178306942876202"
+        rpy="0 0 0" />
+      <mass
+        value="0.00837442341391307" />
+      <inertia
+        ixx="7.99384128506354E-07"
+        ixy="-1.80415329068049E-13"
+        ixz="1.41507581790987E-08"
+        iyy="7.1183828734224E-07"
+        iyz="-1.63053988311352E-11"
+        izz="4.19440979887662E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/ring3.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 0.6 0.6 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/ring3.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="ring3"
+    type="revolute">
+    <origin
+      xyz="0 0 -0.035"
+      rpy="0 0 0" />
+    <parent
+      link="ring2" />
+    <child
+      link="ring3" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.5708"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="little1">
+    <inertial>
+      <origin
+        xyz="-0.000708698806173594 0.00999999999999996 -0.0157267639451369"
+        rpy="0 0 0" />
+      <mass
+        value="0.00664621679962065" />
+      <inertia
+        ixx="6.43464890393808E-07"
+        ixy="-2.3326640187928E-23"
+        ixz="-5.05384728285207E-08"
+        iyy="5.42306473576051E-07"
+        iyz="-1.53849902084972E-22"
+        izz="3.8090177333532E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/little1.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 0.6 0.6 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/little1.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="little1"
+    type="revolute">
+    <origin
+      xyz="0.026018 -0.033038 0.014761"
+      rpy="1.5708 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="little1" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.5708"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="little2">
+    <inertial>
+      <origin
+        xyz="-0.000708698806173868 0.00999999999999994 -0.0157267639451367"
+        rpy="0 0 0" />
+      <mass
+        value="0.00664621679962065" />
+      <inertia
+        ixx="6.43464890393808E-07"
+        ixy="-2.35989521614425E-23"
+        ixz="-5.05384728285206E-08"
+        iyy="5.42306473576051E-07"
+        iyz="-1.4782511881741E-22"
+        izz="3.8090177333532E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/little2.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 0.6 0.6 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/little2.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="little2"
+    type="revolute">
+    <origin
+      xyz="0 0 -0.03"
+      rpy="0 0 0" />
+    <parent
+      link="little1" />
+    <child
+      link="little2" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.5708"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="little3">
+    <inertial>
+      <origin
+        xyz="1.72453593303284E-05 0.00999987615947373 -0.0178306942876198"
+        rpy="0 0 0" />
+      <mass
+        value="0.00837442341391307" />
+      <inertia
+        ixx="7.99384128506354E-07"
+        ixy="-1.80415329051864E-13"
+        ixz="1.41507581790987E-08"
+        iyy="7.1183828734224E-07"
+        iyz="-1.63053988310508E-11"
+        izz="4.19440979887662E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/little3.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 0.6 0.6 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://leju_hand.SLDASM/meshes/little3.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="little3"
+    type="revolute">
+    <origin
+      xyz="0 0 -0.03"
+      rpy="0 0 0" />
+    <parent
+      link="little2" />
+    <child
+      link="little3" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.5708"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+</robot>

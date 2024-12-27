@@ -1,0 +1,5 @@
+Header header
+uint8 set_grasp_index
+---
+bool result 
+uint8 get_grasp_index

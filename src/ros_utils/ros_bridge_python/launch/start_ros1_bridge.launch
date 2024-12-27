@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="ros_bridge_python" type="run_command.py" name="kuavo_bridge_node" output="screen"/>
+</launch>
