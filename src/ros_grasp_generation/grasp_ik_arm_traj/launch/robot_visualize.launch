@@ -1,5 +1,7 @@
 <launch>
     <arg name="visualize" default="false"></arg>
+    <arg name="use_cumotion_traj" default="false"></arg>
+    
     <!-- visualize the robot in rviz -->
     <group if="$(arg visualize)">
         <!-- Load the URDF model -->
@@ -13,6 +15,8 @@
             <param name="use_gui" value="true" />
         </node> -->
         <!-- Optionally, start RViz for visualization -->
-        <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find biped_s4)/config/robot_grasp_dof_to_visual.rviz" /> -->
+        <group unless="$(arg use_cumotion_traj)">
+            <node name="rviz" pkg="rviz" type="rviz" args="-d $(find biped_s4)/config/robot_grasp_dof_to_visual.rviz" />
+        </group>
     </group>
 </launch>

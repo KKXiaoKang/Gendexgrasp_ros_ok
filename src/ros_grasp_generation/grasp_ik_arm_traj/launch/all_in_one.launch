@@ -18,6 +18,7 @@
 
     <include file="$(find grasp_ik_arm_traj)/launch/robot_visualize.launch" >
         <arg name="visualize" value="true" />
+        <arg name="use_cumotion_traj" value="$(arg use_cumotion_traj)" />
     </include>
 
     <!-- <include file="$(find ros_gendexgrasp)/launch/gendexgrasp_ros_service.launch" /> -->
