@@ -59,6 +59,11 @@ tsdf_response = None # tsdf_response结果
 global_robot_arm_plan_status = True 
 
 """
+    # 全局是否在处理 True 空闲 为 | False 为 处理中
+"""
+global_if_process_action_flag = True 
+
+"""
     # 机器人轨迹状态 | 1 Go状态下的轨迹发布器 | 0 Back状态下的轨迹发布器
     JointTrajectory
 """
@@ -75,7 +80,7 @@ JOINT_TRAJ_BACK = None
 """
 IF_PROCESS_VOXEL_MAP_SATUS = False
 
-DEBUG_MODE_FLAG = True
+DEBUG_MODE_FLAG = False
 
 def DEBUG_IK_MODEL(motion_gen):
     goal_pose = Pose.from_list([0.12595975554344743,  # x
@@ -153,13 +158,11 @@ class CumotionActionServer:
         self.flag_publisher_ = rospy.Publisher('/global_success_action_flag_topic', Bool, queue_size=10)
 
         # # Timers for periodic publishing
-        # rospy.Timer(rospy.Duration(1.0), self.publish_go_joint_trajectory)
-        # rospy.Timer(rospy.Duration(1.0), self.publish_back_joint_trajectory)
-        # rospy.Timer(rospy.Duration(0.2), self.timer_callback)
-        # self.arm_status_sub = rospy.Subscriber('/robot_arm_plan_status', Bool, self.arm_status_callback)
+        rospy.Timer(rospy.Duration(0.2), self.timer_callback)
+        self.arm_status_sub = rospy.Subscriber('/robot_arm_plan_status', Bool, self.arm_status_callback)
 
         # Server服务端
-        self._action_server = rospy.Service('cumotion/move_group', cuRoMoveGroup, self.execute_callback)
+        self._action_server = rospy.Service('/cumotion/move_group', cuRoMoveGroup, self.execute_callback)
 
         # TF2 Listener
         self.tf_buffer = Buffer()
@@ -187,6 +190,21 @@ class CumotionActionServer:
             # 创建esdf客户端
             self.__esdf_client = rospy.ServiceProxy(self.esdf_service_name, EsdfAndGradients)
             rospy.loginfo(f"Connected to {self.esdf_service_name} service")
+
+    def timer_callback(self, event):
+        try:
+            global global_if_process_action_flag
+            msg = Bool()
+            msg.data = global_if_process_action_flag
+            self.global_if_process_flag_pub.publish(msg)
+        except Exception as e:
+            rospy.logerr(f"Exception in timer_callback: {e}")
+
+
+    def arm_status_callback(self, msg):
+        """处理机器人手臂规划状态的回调函数"""
+        global global_robot_arm_plan_status  # 声明使用全局变量
+        global_robot_arm_plan_status = msg.data  # 更新全局变量
 
     def js_callback(self, msg):
         self.__js_buffer = {
@@ -253,7 +271,7 @@ class CumotionActionServer:
         motion_gen = MotionGen(motion_gen_config)
         self.motion_gen = motion_gen
         self.__robot_base_frame = motion_gen.kinematics.base_link
-
+        rospy.loginfo(f"Robot base frame: {self.__robot_base_frame}")
         motion_gen.warmup(enable_graph=True)
 
         self.__world_collision = motion_gen.world_coll_checker
@@ -288,7 +306,7 @@ class CumotionActionServer:
             esdf_grid = global_esdf_grid  # 使用上一次的全局地图
 
         # ESDF地图描述
-        if max(esdf_grid.data) <= (-1000.0 + 0.5 * self.__voxel_size + 1e-5):
+        if torch.max(esdf_grid.feature_tensor) <= (-1000.0 + 0.5 * self.__voxel_size + 1e-5):
             rospy.logerr('ESDF data is empty, try again after few seconds.')
             return False
 
@@ -354,9 +372,6 @@ class CumotionActionServer:
                 self.grid_position[0],
                 self.grid_position[1],
                 self.grid_position[2],
-                # self.__grid_position[0],
-                # self.__grid_position[1],
-                # self.__grid_position[2],
                 1,
                 0.0,
                 0.0,
@@ -469,7 +484,7 @@ class CumotionActionServer:
         return objs, supported_objects
 
     def get_joint_trajectory(self, js: CuJointState, dt: float):
-        traj = JointTrajectory()
+        traj = RobotTrajectory()
         cmd_traj = JointTrajectory()
         q_traj = js.position.cpu().view(-1, js.position.shape[-1]).numpy()
         vel = js.velocity.cpu().view(-1, js.position.shape[-1]).numpy()
@@ -538,6 +553,7 @@ class CumotionActionServer:
     def execute_callback(self, goal_handle):
         global global_if_process_action_flag # cumotion是否正在进行处理
         global TRAJ_COUNTER  #  轨迹发布状态计数器
+        global global_robot_arm_plan_status # 机器人手臂的状态是go状态 还是 back状态
 
         global JOINT_TRAJ_GO 
         global JOINT_TRAJ_BACK 
@@ -554,20 +570,16 @@ class CumotionActionServer:
 
         rospy.loginfo('Executing goal...')
         # check moveit scaling factors:
-        min_scaling_factor = min(goal_handle.request.request.max_velocity_scaling_factor,
-                                 goal_handle.request.request.max_acceleration_scaling_factor)
+        min_scaling_factor = min(goal_handle.request.max_velocity_scaling_factor,
+                                 goal_handle.request.max_acceleration_scaling_factor)
         time_dilation_factor = min(1.0, min_scaling_factor)
 
         if time_dilation_factor <= 0.0 or self.override_moveit_scaling_factors:
-            time_dilation_factor = self.get_parameter(
-                'time_dilation_factor').get_parameter_value().double_value
-        rospy.loginfo('Planning with time_dilation_factor: ' +
-                               str(time_dilation_factor))
-        plan_req = goal_handle.request.request
-        goal_handle.succeed()
-
-        scene = goal_handle.request.planning_options.planning_scene_diff
-
+            time_dilation_factor = self.time_dilation_factor
+        rospy.loginfo('Planning with time_dilation_factor: ' + str(time_dilation_factor))
+        plan_req = goal_handle.request
+        scene = goal_handle.planning_options.planning_scene_diff
+        # goal_handle.succeed()
         world_objects = scene.world.collision_objects
         world_update_status = self.update_world_objects(world_objects) # 更新世界描述 | 根据规划的状态 go 还是 back 状态 进行地图获取调整 | 
         
@@ -701,15 +713,14 @@ class CumotionActionServer:
             # 在这里记录全局地图，因为作为origin_esdf_grid成功了
             global_esdf_grid = origin_esdf_grid
 
-            # 记录发布的轨迹内容
-            if TRAJ_COUNTER % 3 == 0:
-                TRAJ_COUNTER = 1 # 重新置1
-            if TRAJ_COUNTER % 2 == 1:   # Go状态下的轨迹
+            # 记录发布的轨迹内容 | 发布轨迹的内容            
+            if global_robot_arm_plan_status:
                 JOINT_TRAJ_GO = traj.joint_trajectory
-            elif TRAJ_COUNTER % 2 == 0: # Back状态下的轨迹
+                self.go_joint_traj_pub.publish(JOINT_TRAJ_GO)
+            else:
                 JOINT_TRAJ_BACK = traj.joint_trajectory
-            TRAJ_COUNTER += 1
-            
+                self.back_joint_traj_pub.publish(JOINT_TRAJ_BACK)
+
             # 发布成功action调用成功
             success_msg = Bool()
             success_msg.data = True
@@ -787,7 +798,7 @@ class CumotionActionServer:
         vox = voxels.view(-1, 4).cpu().numpy()
         marker.points = []
 
-        for i in range(min(len(vox), self.__max_publish_voxels)):
+        for i in range(min(len(vox), self.max_publish_voxels)):
 
             pt = Point()
             pt.x = float(vox[i, 0])
@@ -805,7 +816,7 @@ class CumotionActionServer:
             marker.colors.append(color)
             marker.points.append(pt)
         # publish voxels:
-        marker.header.stamp = self.get_clock().now().to_msg()
+        marker.header.stamp = rospy.Time.now() 
 
         self.voxel_pub.publish(marker)
 
@@ -836,7 +847,7 @@ def map_update_thread(cumotion_action_server):
             esdf_response = cumotion_action_server.send_request(aabb_min, voxel_dims)
             
             if esdf_response  is not None:
-                rospy.loginfo("ESDF map updated successfully")
+                # rospy.loginfo("ESDF map updated successfully")
                 tsdf_response = esdf_response 
             else:
                 rospy.logwarn("Failed to update ESDF map")
