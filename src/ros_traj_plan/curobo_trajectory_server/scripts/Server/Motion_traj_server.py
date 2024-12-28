@@ -278,7 +278,7 @@ class CumotionActionServer:
         if not self.add_ground_plane:
             motion_gen.clear_world_cache()
 
-        rospy.loginfo('cuMotion is ready for planning queries!')
+        rospy.loginfo('cuMotion_Motion_Server is ready for planning queries!')
         
         # DEBUG MODE
         if DEBUG_MODE_FLAG:
