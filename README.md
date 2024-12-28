@@ -35,7 +35,8 @@ python3 demo_offline.py
 ```
 ## 编译
 ```bash
-catkin config -DCMAKE_ASM_COMPILER=/usr/bin/as -DCMAKE_BUILD_TYPE=Release
+catkin config --extend /opt/ros/noetic
+catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release
 catkin build
 ```
 # 请注意（运行环境下的numpy环境的不同）
