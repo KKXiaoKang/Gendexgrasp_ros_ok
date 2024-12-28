@@ -16,21 +16,24 @@ from curobo.util.logger import setup_curobo_logger
 from curobo.util_file import get_robot_configs_path
 from curobo.util_file import join_path
 from curobo.util_file import load_yaml
-from curobo.wrap.reacher.motion_gen import MotionGen
-from curobo.wrap.reacher.motion_gen import MotionGenConfig
-from curobo.wrap.reacher.motion_gen import MotionGenPlanConfig
-from curobo.wrap.reacher.motion_gen import MotionGenStatus
+from curobo.rollout.rollout_base import Goal
+from curobo.wrap.reacher.mpc import MpcSolver, MpcSolverConfig
+
+from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Point
 from geometry_msgs.msg import Vector3
+from geometry_msgs.msg import Quaternion
+
 from moveit_msgs.msg import CollisionObject
 from moveit_msgs.msg import MoveItErrorCodes
 from moveit_msgs.msg import RobotTrajectory
 from nvblox_msgs.srv import EsdfAndGradients, EsdfAndGradientsRequest, EsdfAndGradientsResponse
-
 import numpy as np
 from sensor_msgs.msg import JointState
 from shape_msgs.msg import SolidPrimitive
 from std_msgs.msg import ColorRGBA
+from std_msgs.msg import Header
+from std_msgs.msg import Bool
 import torch
 from trajectory_msgs.msg import JointTrajectory
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -39,8 +42,8 @@ from visualization_msgs.msg import Marker
 from tf2_ros import Buffer, TransformListener, LookupException, ExtrapolationException
 from geometry_msgs.msg import PointStamped
 from tf2_geometry_msgs import do_transform_point
-from std_msgs.msg import Bool
 from curobo_trajectory_server.srv import cuRoMoveGroup, cuRoMoveGroupResponse, cuRoMoveGroupRequest
+from kuavo_msgs.msg import sensorsData
 import threading
 
 # from curobo.types.robot import JointState
@@ -82,39 +85,6 @@ IF_PROCESS_VOXEL_MAP_SATUS = False
 
 DEBUG_MODE_FLAG = False
 
-def DEBUG_IK_MODEL(motion_gen):
-    goal_pose = Pose.from_list([0.12595975554344743,  # x
-                                0.2546565360634217,   # y
-                                0.03443182480649596,  # z
-                                0.9077303036242385,   # qw
-                                -0.07733529679630219, # qx
-                                -0.4109196668427433,  # qy
-                                -0.03449601648776949  # qz
-                                ]) 
-    retract_config = torch.tensor([[0.34, 0.87, 0.17, -1.22, -0.34, -0.52, 0.00]]).cuda()
-    start_state = CuJointState.from_position(
-        retract_config, 
-        joint_names=[
-            "zarm_l1_joint",
-            "zarm_l2_joint",
-            "zarm_l3_joint",
-            "zarm_l4_joint",
-            "zarm_l5_joint",
-            "zarm_l6_joint",
-            "zarm_l7_joint"
-        ],
-    )
-    result = motion_gen.plan_single(start_state, goal_pose, MotionGenPlanConfig(max_attempts=1))
-    traj = result.get_interpolated_plan()  # result.interpolation_dt has the dt between timesteps
-    print("Trajectory Generated: ", result.success)
-    print(" ---------------- ")
-    print("Plan Result: ", result)
-    print(" ---------------- ")
-    print("Status: ", result.status)
-    print(" ---------------- ")
-    print("Solve Time: ", result.solve_time)
-    print(" ---------------- ")
-
 class CumotionActionServer:
     def __init__(self):
         rospy.init_node('trajectory_server_node', anonymous=True)
@@ -150,6 +120,20 @@ class CumotionActionServer:
         else:
             setup_curobo_logger('warning')
 
+        # 目标物体
+        self.cube_pose = PoseStamped()
+        self.cube_pose.header.frame_id = 'base_link'
+        self.cube_pose.pose.position.x = 0.4
+        self.cube_pose.pose.position.y = 0.3
+        self.cube_pose.pose.position.z = 0.3
+        self.cube_pose.pose.orientation.x = 0.0
+        self.cube_pose.pose.orientation.y = 0.0
+        self.cube_pose.pose.orientation.z = 0.0 
+        self.cube_pose.pose.orientation.w = 1.0
+
+        # 记录上一次末端追踪的pose
+        self.past_pose = None
+
         # Publishers
         self.voxel_pub = rospy.Publisher('/curobo/voxels', Marker, queue_size=10)
         self.go_joint_traj_pub = rospy.Publisher('/cumotion_go_joint_trajectory_topic', JointTrajectory, queue_size=10)
@@ -157,10 +141,20 @@ class CumotionActionServer:
         self.global_if_process_flag_pub = rospy.Publisher('/global_if_process_action_flag_topic', Bool, queue_size=10)
         self.flag_publisher_ = rospy.Publisher('/global_success_action_flag_topic', Bool, queue_size=10)
 
-        # # Timers for periodic publishing
+        # Timers for periodic publishing
         rospy.Timer(rospy.Duration(0.2), self.timer_callback)
         self.arm_status_sub = rospy.Subscriber('/robot_arm_plan_status', Bool, self.arm_status_callback)
 
+        # 监听关节数据
+        self.current_robot_joint_space = JointState(
+            header=Header(stamp=rospy.Time(0), frame_id='torso'),
+            name=['zarm_l1_joint', 'zarm_l2_joint', 'zarm_l3_joint', 'zarm_l4_joint', 'zarm_l5_joint', 'zarm_l6_joint', 'zarm_l7_joint'],
+            position=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            velocity=[],
+            effort=[]
+        )
+        self.ocs2_robot_arm_status_sub = rospy.Subscriber('/sensors_data_raw', sensorsData, self.ocs2_robot_arm_status_callback)
+        
         # Server服务端
         self._action_server = rospy.Service('/cumotion/move_group', cuRoMoveGroup, self.execute_callback)
 
@@ -177,7 +171,7 @@ class CumotionActionServer:
         # warm up
         self.warmup()
         self.__query_count = 0
-        self.__tensor_args = self.motion_gen.tensor_args
+        self.__tensor_args = self.mpc.tensor_args
         self.subscription = rospy.Subscriber(self.joint_states_topic, JointState, self.js_callback)
         self.__js_buffer = None
         # 创建客户端
@@ -190,6 +184,35 @@ class CumotionActionServer:
             # 创建esdf客户端
             self.__esdf_client = rospy.ServiceProxy(self.esdf_service_name, EsdfAndGradients)
             rospy.loginfo(f"Connected to {self.esdf_service_name} service")
+
+    def ocs2_robot_arm_status_callback(self, msg):
+        """处理机器人手臂状态的回调函数"""
+        if len(msg.joint_data.joint_q) >= 19:  # 确保数据长度足够
+            self.current_robot_joint_space.position = msg.joint_data.joint_q[12:19]
+        else:
+            rospy.logwarn("Received joint_data.joint_q does not contain enough elements!")
+
+    def timer_callback(self, event):
+        try:
+            global global_if_process_action_flag
+            msg = Bool()
+            msg.data = global_if_process_action_flag
+            self.global_if_process_flag_pub.publish(msg)
+        except Exception as e:
+            rospy.logerr(f"Exception in timer_callback: {e}")
+
+
+    def arm_status_callback(self, msg):
+        """处理机器人手臂规划状态的回调函数"""
+        global global_robot_arm_plan_status  # 声明使用全局变量
+        global_robot_arm_plan_status = msg.data  # 更新全局变量
+
+    def js_callback(self, msg):
+        self.__js_buffer = {
+            'joint_names': msg.name,
+            'position': msg.position,
+            'velocity': msg.velocity,
+        }
 
     def warmup(self):
         global DEBUG_MODE_FLAG
@@ -231,34 +254,144 @@ class CumotionActionServer:
 
         robot_dict = robot_dict['robot_cfg']
 
-        # Initialize motion generation config
-        motion_gen_config = MotionGenConfig.load_from_robot_config(
+        # MPC - Setting
+        mpc_config = MpcSolverConfig.load_from_robot_config(
             robot_dict,
             world_file,
-            self.tensor_args,
-            interpolation_dt=interpolation_dt,
+            tensor_args=self.tensor_args,
             collision_cache={
                 'obb': collision_cache_cuboid,
                 'mesh': collision_cache_mesh,
             },
             collision_checker_type=CollisionCheckerType.VOXEL,
-            ee_link_name=self.tool_frame,
+            use_cuda_graph=True,
+            use_cuda_graph_metrics=True,
+            use_cuda_graph_full_step=False,
+            self_collision_check=True,
+            use_mppi=True,
+            use_lbfgs=False,
+            use_es=False,
+            store_rollouts=True,
+            step_dt=0.02,
         )
 
-        # Initialize the motion generator
-        motion_gen = MotionGen(motion_gen_config)
-        self.motion_gen = motion_gen
-        self.__robot_base_frame = motion_gen.kinematics.base_link
+        mpc = MpcSolver(mpc_config)
+        self.mpc = mpc
+        self.__robot_base_frame = mpc.kinematics.base_link
         rospy.loginfo(f"Robot base frame: {self.__robot_base_frame}")
-        motion_gen.warmup(enable_graph=True)
 
-        self.__world_collision = motion_gen.world_coll_checker
-        if not self.add_ground_plane:
-            motion_gen.clear_world_cache()
+        # 初次求解 | 要等/sensors_data_raw话题完成
+        rospy.loginfo("Waiting for /sensors_data_raw topic to publish...")
+        sensors_data = rospy.wait_for_message('/sensors_data_raw', sensorsData)  # 替换 SensorMessageType 为实际消息类型
+        rospy.loginfo(f"Received /sensors_data_raw message: {sensors_data.joint_data.joint_q}")
 
-        rospy.loginfo('cuMotion is ready for planning queries!')
+        retract_cfg = mpc.rollout_fn.dynamics_model.retract_config.clone().unsqueeze(0)
+        joint_names = mpc.rollout_fn.joint_names
+        state = mpc.rollout_fn.compute_kinematics(
+            CuJointState.from_position(retract_cfg, joint_names=joint_names)
+        )
+        rospy.loginfo(f"MPC warmup state: {retract_cfg}") # 获取初始位置
+
+        current_state = CuJointState.from_position(retract_cfg, joint_names=joint_names)
+        retract_pose = Pose(state.ee_pos_seq, quaternion=state.ee_quat_seq)
+        goal = Goal(
+            current_state=current_state,
+            goal_state=CuJointState.from_position(retract_cfg, joint_names=joint_names),
+            goal_pose=retract_pose,
+        )
+        self.goal_buffer = mpc.setup_solve_single(goal, 1)
+        mpc.update_goal(self.goal_buffer)
+        mpc_result = mpc.step(current_state, max_attempts=2)
+        rospy.loginfo(f"MPC warmup mpc_result: { mpc_result.js_action.position.cpu().numpy()}") # 获取position位置
+
+        # 碰撞世界检查声明
+        self.__world_collision = mpc.world_coll_checker
+        rospy.loginfo('cuMotion_MPC_Server is ready for planning queries!')
+
+    def send_request(self, aabb_min_m, aabb_size_m):
+        self.__esdf_req.aabb_min_m = aabb_min_m
+        self.__esdf_req.aabb_size_m = aabb_size_m
         
-        # DEBUG MODE
-        if DEBUG_MODE_FLAG:
-            DEBUG_IK_MODEL(motion_gen)
+        # esdf_future = self.__esdf_client.call_async(self.__esdf_req) # 异步客户端调用服务端
+        # return esdf_future
+        try:
+            # 使用同步调用而不是异步调用
+            esdf_response = self.__esdf_client(self.__esdf_req)
+            return esdf_response
+        except rospy.ServiceException as e:
+            rospy.logerr(f"Service call failed: {e}")
+            return None
+        
+    def execute_callback(self, goal_handle):
+        """
+            TODO: 用于后续更新mpc追踪的ik_goal(具体更新cube_pose的PoseStamped数据类型即可)
+        """
+        pass
+
+    def run(self):
+        rate = rospy.Rate(100)  # 设置运行频率为 100Hz
+        rospy.loginfo("cuMotion_MPC_Server Now is running")
+        while not rospy.is_shutdown():
+            # 更新全局末端追踪位置pose
+            ik_goal = Pose.from_list([self.cube_pose.pose.position.x,  # x
+                                      self.cube_pose.pose.position.y,  # y
+                                      self.cube_pose.pose.position.z,  # z
+                                      self.cube_pose.pose.orientation.w,   # qw
+                                      self.cube_pose.pose.orientation.x,   # qx
+                                      self.cube_pose.pose.orientation.y,   # qy
+                                      self.cube_pose.pose.orientation.z    # qz
+                                    ]) 
+            self.goal_buffer.goal_pose.copy_(ik_goal)
+            self.mpc.update_goal(self.goal_buffer)
+            self.past_pose = ik_goal
             
+            # TODO:更新下一步状态
+            # mpc_result = self.mpc.step(current_state, max_attempts=2)
+
+            # TODO:发送CMD命令
+            
+            # 等待Hz
+            rate.sleep()
+
+def map_update_thread(cumotion_action_server):
+    """线程中运行的地图更新逻辑"""
+    global IF_PROCESS_VOXEL_MAP_SATUS
+    global origin_esdf_grid
+    global tsdf_response
+
+    origin_voxel_dims = [2.0, 2.0, 2.0]
+    while not rospy.is_shutdown():
+        if not IF_PROCESS_VOXEL_MAP_SATUS:
+            # This is half of x,y and z dims
+            aabb_min = Point()
+            aabb_min.x = -1 * origin_voxel_dims[0] / 2
+            aabb_min.y = -1 * origin_voxel_dims[1] / 2
+            aabb_min.z = -1 * origin_voxel_dims[2] / 2
+            # This is a voxel size.
+            voxel_dims = Vector3()
+            voxel_dims.x = origin_voxel_dims[0]
+            voxel_dims.y = origin_voxel_dims[1]
+            voxel_dims.z = origin_voxel_dims[2]
+            # 发送服务请求
+            esdf_response = cumotion_action_server.send_request(aabb_min, voxel_dims)
+            
+            if esdf_response  is not None:
+                # rospy.loginfo("ESDF map updated successfully")
+                tsdf_response = esdf_response 
+            else:
+                rospy.logwarn("Failed to update ESDF map")
+        else:
+            rospy.loginfo("Voxel map processing status is active, skipping update")
+
+        rospy.sleep(1.0)  # 控制线程更新频率，避免过于频繁调用
+
+if __name__ == '__main__':
+    curoBoServer = CumotionActionServer()
+    planning_thread = threading.Thread(target=map_update_thread, args=(curoBoServer,))
+    planning_thread.start()
+    
+    try:
+        curoBoServer.run()
+    except rospy.ROSInterruptException as e:
+        rospy.logerr(e)
+        rospy.shutdown()
