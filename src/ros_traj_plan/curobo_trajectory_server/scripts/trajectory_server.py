@@ -159,7 +159,7 @@ class CumotionActionServer:
         # self.arm_status_sub = rospy.Subscriber('/robot_arm_plan_status', Bool, self.arm_status_callback)
 
         # Server服务端
-        _action_server = rospy.Service('cumotion/move_group', cuRoMoveGroup, self.execute_callback)
+        self._action_server = rospy.Service('cumotion/move_group', cuRoMoveGroup, self.execute_callback)
 
         # TF2 Listener
         self.tf_buffer = Buffer()
@@ -836,7 +836,7 @@ def map_update_thread(cumotion_action_server):
             esdf_response = cumotion_action_server.send_request(aabb_min, voxel_dims)
             
             if esdf_response  is not None:
-                # rospy.loginfo("ESDF map updated successfully")
+                rospy.loginfo("ESDF map updated successfully")
                 tsdf_response = esdf_response 
             else:
                 rospy.logwarn("Failed to update ESDF map")
