@@ -1,0 +1,7 @@
+# Request part: PoseStamped and Header
+geometry_msgs/PoseStamped pose
+std_msgs/Header header
+
+---
+# Response part: bool result indicating success or failure
+bool result

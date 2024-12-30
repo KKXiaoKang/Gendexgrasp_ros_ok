@@ -135,7 +135,8 @@ robot_cfg:
             joint_names: ['zarm_l1_joint', 'zarm_l2_joint', 'zarm_l3_joint', 'zarm_l4_joint', 'zarm_l5_joint', 'zarm_l6_joint', 'zarm_l7_joint']
             # [0.34, 0.87, 0.17, -1.22, -0.34, -0.52, 0.00]
             # [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00] 
-            retract_config:  [0.00, 1.57, 0.00, 0.00, 0.00, 0.00, 0.00] 
+            # [0.00, 1.57, 0.00, 0.00, 0.00, 0.00, 0.00] 
+            retract_config:  [0.34, 0.87, 0.17, -1.22, -0.34, -0.52, 0.00]
             null_space_weight:  [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
             cspace_distance_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
             max_jerk: 500.0

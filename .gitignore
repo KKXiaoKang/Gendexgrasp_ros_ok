@@ -195,3 +195,6 @@ ros_vision/Gen6D/
 
 # 屏蔽blender_visualizer没必要的文件
 blender_visual
+
+src/kuavo_opensource/
+Groot2-v1.6.1-linux-installer.run
