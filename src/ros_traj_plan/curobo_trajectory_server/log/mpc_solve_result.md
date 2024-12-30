@@ -74,8 +74,7 @@ WrapResult(action=
           goalset_index=tensor([[0]], device='cuda:0', 
           dtype=torch.int32), 
           
-          null_space_error=tensor([[5.4125e-07]], device='cuda:0')), 
-          debug=None, 
+          null_space_error=tensor([[5.4125e-07]], device='cuda:0')), debug=None, 
           js_action=JointState(position=tensor([[ 9.4514e-05,  1.5701e+00, -2.6242e-04, -2.2785e-04,  2.2506e-04, 2.8908e-04,  1.2996e-04]], device='cuda:0'), 
                                velocity=tensor([[ 0.0047,  0.0055, -0.0131, -0.0114,  0.0113,  0.0145,  0.0065]],device='cuda:0'), 
                                acceleration=tensor([[ 0.2363,  0.2754, -0.6560, -0.5696,  0.5626,  0.7227,  0.3249]],device='cuda:0'), 

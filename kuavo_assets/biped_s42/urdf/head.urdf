@@ -1,0 +1,170 @@
+  <!-- 头部感知层-->
+  <link
+    name="head_yaw">
+    <inertial>
+      <origin
+        xyz="4.61869640212623E-05 0.00863328384329101 -0.00982733540736286"
+        rpy="0 0 0" />
+      <mass
+        value="0.0805594702775029" />
+      <inertia
+        ixx="3.80152953399884E-05"
+        ixy="7.78523720025533E-08"
+        ixz="1.07251078244678E-08"
+        iyy="4.36939633178515E-05"
+        iyz="-7.35584139901697E-06"
+        izz="3.80072612838224E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://biped_s42/meshes/pitch_motor.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://biped_s42/meshes/pitch_motor.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="head_yaw"
+    type="continuous">
+    <origin
+      xyz="-0.0185 0 0.6014"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="head_yaw" />
+    <axis
+      xyz="0 0 1" />
+    <!-- <limit
+      lower="-0.43"
+      upper="0.43"
+      effort="6.0"
+      velocity="14.0" /> -->
+  </joint>
+  <link
+    name="head_pitch">
+    <inertial>
+      <origin
+        xyz="0.0255261755502385 -0.000657054930016489 0.100037683407211"
+        rpy="0 0 0" />
+      <mass
+        value="0.58198371123201" />
+      <inertia
+        ixx="0.00188894329569263"
+        ixy="1.8317313692313E-06"
+        ixz="0.000338793579594552"
+        iyy="0.00183211496561936"
+        iyz="6.62756224771694E-06"
+        izz="0.00179257124056015" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://biped_s42/meshes/head.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://biped_s42/meshes/head.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="head_pitch"
+    type="continuous">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="head_yaw" />
+    <child
+      link="head_pitch" />
+    <axis
+      xyz="0 1 0" />
+    <!-- <limit
+      lower="-1.57"
+      upper="1.57"
+      effort="6.0"
+      velocity="14.0" /> -->
+  </joint>
+  <link
+    name="head_camera">
+    <inertial>
+      <origin
+        xyz="-0.0178089042546857 -0.0160960721497749 -4.88216635797789E-05"
+        rpy="0 0 0" />
+      <mass
+        value="0.0170256015508824" />
+      <inertia
+        ixx="1.09182640293126E-05"
+        ixy="-1.0535440811359E-07"
+        ixz="-1.05871502719371E-08"
+        iyy="8.57178950902431E-07"
+        iyz="-1.64019134430088E-08"
+        izz="1.02869893336697E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://biped_s42/meshes/3D-camera.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://biped_s42/meshes/3D-camera.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="head_camera"
+    type="fixed">
+    <origin
+      xyz="0.10849 0.0175 0.11071"
+      rpy="0 0.48869 0" />
+    <parent
+      link="head_pitch" />
+    <child
+      link="head_camera" />
+    <axis
+      xyz="0 0 0" />
+  </joint>

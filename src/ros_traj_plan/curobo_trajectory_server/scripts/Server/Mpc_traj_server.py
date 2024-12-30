@@ -94,7 +94,8 @@ class CumotionActionServer:
 
         # Declare and initialize parameters
         self.tensor_args = TensorDeviceType()
-        self.robot_config = rospy.get_param('~robot', '/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/kuavo_assets/biped_s40/urdf/biped_s40.yml')
+        # self.robot_config = rospy.get_param('~robot', '/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/kuavo_assets/biped_s40/urdf/biped_s40.yml')
+        self.robot_config = rospy.get_param('~robot', '/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/kuavo_assets/biped_s42/urdf/biped_s42.yml')
         self.time_dilation_factor = rospy.get_param('~time_dilation_factor', 1.0)
         self.collision_cache_mesh = rospy.get_param('~collision_cache_mesh', 20)
         self.collision_cache_cuboid = rospy.get_param('~collision_cache_cuboid', 20)
@@ -110,7 +111,8 @@ class CumotionActionServer:
         self.tool_frame = rospy.get_param('~tool_frame', None)
         self.grid_position = rospy.get_param('~grid_position', [0.0, 0.0, 0.0])
         self.esdf_service_name = rospy.get_param('~esdf_service_name', '/nvblox_node/get_esdf_and_gradient')
-        self.urdf_path = rospy.get_param('~urdf_path', '/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/kuavo_assets/biped_s40/urdf/biped_s40_left_arm.urdf')
+        # self.urdf_path = rospy.get_param('~urdf_path', '/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/kuavo_assets/biped_s40/urdf/biped_s40_left_arm.urdf')
+        self.urdf_path = rospy.get_param('~urdf_path', '/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/kuavo_assets/biped_s42/urdf/biped_s42_v4_left_arm.urdf')
         self.enable_debug_mode = rospy.get_param('~enable_curobo_debug_mode', False)
         self.add_ground_plane = rospy.get_param('~add_ground_plane', False)
         self.override_moveit_scaling_factors = rospy.get_param('~override_moveit_scaling_factors', True)
@@ -152,6 +154,7 @@ class CumotionActionServer:
         self.arm_status_sub = rospy.Subscriber('/robot_arm_plan_status', Bool, self.arm_status_callback)
 
         # 监听关节数据
+        self.curobo_joint_state = None 
         self.current_curobo_joint_space = None # 用于将机器人实时的关节状态转换为CuJointState状态Cuda数据
         self._joint_names = ['zarm_l1_joint', 'zarm_l2_joint', 'zarm_l3_joint', 'zarm_l4_joint', 'zarm_l5_joint', 'zarm_l6_joint', 'zarm_l7_joint']
         self.current_robot_joint_space = JointState(
@@ -169,7 +172,7 @@ class CumotionActionServer:
         # Server服务端
         self._action_server = rospy.Service('/cumotion/move_group', cuRoMoveGroup, self.execute_callback)
         self._mpc_action_server = rospy.Service('/cumotion/mpc_set_goal', cuRoMpcSetting, self.mpc_goal_callback)
-        
+
         # TF2 Listener
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer)
@@ -183,7 +186,6 @@ class CumotionActionServer:
         # warm up
         self.warmup()
         self.__query_count = 0
-        self.__tensor_args = self.mpc.tensor_args
         self.subscription = rospy.Subscriber(self.joint_states_topic, JointState, self.js_callback)
         self.__js_buffer = None
         # 创建客户端
@@ -201,12 +203,8 @@ class CumotionActionServer:
         try:
             # 提取Pose数据并赋值给self.cube_pose
             self.cube_pose = request.pose
-
             # 输出接收到的目标pose信息
             rospy.loginfo("Received new goal pose:")
-            rospy.loginfo(f"Position: {self.cube_pose.pose.position}")
-            rospy.loginfo(f"Orientation: {self.cube_pose.pose.orientation}")
-
             # 返回成功结果
             return cuRoMpcSettingResponse(result=True)
 
@@ -231,16 +229,22 @@ class CumotionActionServer:
         else:
             rospy.logwarn("Received joint_data.joint_q does not contain enough elements!")
 
-        curobo_joint_state = torch.tensor([self.current_robot_joint_space.position[0], 
-                                           self.current_robot_joint_space.position[1],
-                                           self.current_robot_joint_space.position[2],
-                                           self.current_robot_joint_space.position[3], 
-                                           self.current_robot_joint_space.position[4], 
-                                           self.current_robot_joint_space.position[5], 
-                                           self.current_robot_joint_space.position[6]
-                                           ])
-        self.current_curobo_joint_space = CuJointState.from_position(position=curobo_joint_state,
-                                                                     joint_names=self._joint_names) 
+        """
+        retract_config = torch.tensor([[0.34, 0.87, 0.17, -1.22, -0.34, -0.52, 0.00]]).cuda()
+        start_state = JointState.from_position(
+            retract_config, 
+            joint_names=[
+                "zarm_l1_joint",
+                "zarm_l2_joint",
+                "zarm_l3_joint",
+                "zarm_l4_joint",
+                "zarm_l5_joint",
+                "zarm_l6_joint",
+                "zarm_l7_joint"
+            ],
+        )
+        """
+
 
     def publish_marker(self, event):
         """定时器回调函数，用于发布 Marker"""
@@ -301,7 +305,7 @@ class CumotionActionServer:
         }
 
     def warmup(self):
-        global DEBUG_MODE_FLAG
+        rospy.loginfo("cuMotion_MPC_Server Now is running")
         # Load robot config
         self.robot_config_path = join_path(get_robot_configs_path(), self.robot_config)
 
@@ -363,6 +367,8 @@ class CumotionActionServer:
 
         mpc = MpcSolver(mpc_config)
         self.mpc = mpc
+        self.tensor_args = self.mpc.tensor_args
+
         self.__robot_base_frame = mpc.kinematics.base_link
         rospy.loginfo(f"Robot base frame: {self.__robot_base_frame}")
 
@@ -380,6 +386,9 @@ class CumotionActionServer:
 
         current_state = CuJointState.from_position(retract_cfg, joint_names=joint_names)
         retract_pose = Pose(state.ee_pos_seq, quaternion=state.ee_quat_seq)
+        rospy.loginfo(f"state.ee_pos_seq: {state.ee_pos_seq}") # 获取末端位置
+        rospy.loginfo(f"state.ee_quat_seq: {state.ee_quat_seq}") # 获取末端姿态
+
         goal = Goal(
             current_state=current_state,
             goal_state=CuJointState.from_position(retract_cfg, joint_names=joint_names),
@@ -387,12 +396,13 @@ class CumotionActionServer:
         )
         self.goal_buffer = mpc.setup_solve_single(goal, 1)
         mpc.update_goal(self.goal_buffer)
-        mpc_result = mpc.step(current_state, max_attempts=2)
-        rospy.loginfo(f"MPC warmup mpc_result: { mpc_result.js_action.position.cpu().numpy()}") # 获取position位置
+        # mpc_result = mpc.step(current_state, max_attempts=2)
+        # rospy.loginfo(f"MPC warmup mpc_result: { mpc_result.js_action.position.cpu().numpy()}") # 获取position位置
 
         # 碰撞世界检查声明
         self.__world_collision = mpc.world_coll_checker
         rospy.loginfo('cuMotion_MPC_Server is ready for planning queries!')
+
 
     def send_request(self, aabb_min_m, aabb_size_m):
         self.__esdf_req.aabb_min_m = aabb_min_m
@@ -418,36 +428,42 @@ class CumotionActionServer:
         """
         更新目标状态 (例如更新目标位姿或目标位置)
         """
-        # 这里根据需要更新目标
+        self.curobo_joint_state = torch.tensor([self.current_robot_joint_space.position[0], 
+                                                self.current_robot_joint_space.position[1],
+                                                self.current_robot_joint_space.position[2],
+                                                self.current_robot_joint_space.position[3], 
+                                                self.current_robot_joint_space.position[4], 
+                                                self.current_robot_joint_space.position[5], 
+                                                self.current_robot_joint_space.position[6]
+                                                ]).cuda()  # 转移到 CUDA
+        self.current_curobo_joint_space = CuJointState.from_position(position=self.tensor_args.to_device(self.curobo_joint_state),
+                                                                     joint_names=self._joint_names) 
         if self.cube_pose:
-            # 更新全局目标
-            cube_pose_position = torch.tensor([self.cube_pose.pose.position.x, 
-                                               self.cube_pose.pose.position.y,
-                                               self.cube_pose.pose.position.z]).to('cuda')  # 转移到 CUDA
+            # 获取目标位置和姿态
+            cube_position = torch.tensor(
+                [self.cube_pose.pose.position.x, self.cube_pose.pose.position.y, self.cube_pose.pose.position.z]
+            ).cuda()
 
-            cube_pose_orientation = torch.tensor([self.cube_pose.pose.orientation.x, 
-                                                  self.cube_pose.pose.orientation.y,
-                                                  self.cube_pose.pose.orientation.z,
-                                                  self.cube_pose.pose.orientation.w]).to('cuda')  # 转移到 CUDA
-            
-            goal_mpc_pose = Pose(cube_pose_position, cube_pose_orientation)
-            self.goal = Goal(
-                current_state=self.current_curobo_joint_space,
-                goal_pose=goal_mpc_pose,
-            )
-            # 更新MPC的目标缓冲区
-            self.goal_buffer = self.mpc.setup_solve_single(self.goal, 1)
+            cube_orientation = torch.tensor(
+                [self.cube_pose.pose.orientation.w, self.cube_pose.pose.orientation.x, 
+                 self.cube_pose.pose.orientation.y, self.cube_pose.pose.orientation.z]
+            ).cuda()
+
+            # 判断是否需要更新目标
+            # if self.past_pose is None or torch.norm(cube_position - self.past_pose) > 1e-3:
+            ik_goal = Pose(position=self.tensor_args.to_device(cube_position), 
+                           quaternion=self.tensor_args.to_device(cube_orientation))
+            self.goal_buffer.goal_pose.copy_(ik_goal)
             self.mpc.update_goal(self.goal_buffer)
-        
-            # self.goal_buffer.goal_pose.copy_(self.goal)
-            # self.mpc.update_goal(self.goal_buffer)
-            # 更新
-            # rospy.loginfo(f"MPC goal updated: {self.goal_buffer.goal_pose.position.cpu().numpy()}")
-            
+            rospy.loginfo(f"Updated MPC goal to {ik_goal}")
+            rospy.loginfo(f"Current goal_buffer: {self.goal_buffer}")
+            self.past_pose = cube_position
+
     def run(self):
-        rate = rospy.Rate(100)  # 设置运行频率为 100Hz
-        rospy.loginfo("cuMotion_MPC_Server Now is running")
         while not rospy.is_shutdown():
+            # 测试
+            self.mpc.get_visual_rollouts()
+
             # TODO:更新目标
             self.update_mpc_goal()
 
@@ -462,8 +478,6 @@ class CumotionActionServer:
                 # rospy.loginfo(f"Control command joint positions: {joint_positions_list}")
                 # control-CMD
                 self.control_robot_arm_cmd(joint_positions_list)
-            # 等待Hz
-            rate.sleep()
 
 def map_update_thread(cumotion_action_server):
     """线程中运行的地图更新逻辑"""

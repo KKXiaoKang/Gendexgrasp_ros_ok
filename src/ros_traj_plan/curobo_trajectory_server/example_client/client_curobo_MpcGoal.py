@@ -55,8 +55,8 @@ def main():
     try:
         # 创建目标 Pose 消息
         pose = Pose()
-        pose.position.x = 0.4  # 设置目标位置x
-        pose.position.y = 0.3  # 设置目标位置y
+        pose.position.x = 0.3 # 设置目标位置x
+        pose.position.y = 0.1  # 设置目标位置y
         pose.position.z = 0.2  # 设置目标位置z
         pose.orientation.x = 0.0  # 设置目标姿态x
         pose.orientation.y = 0.0  # 设置目标姿态y

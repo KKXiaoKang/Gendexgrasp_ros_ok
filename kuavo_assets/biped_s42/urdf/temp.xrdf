@@ -1,0 +1,21 @@
+    zarm_l1_link: 0.1
+    zarm_l2_link: 0.1
+    zarm_l3_link: 0.1
+    zarm_l4_link: 0.1
+    zarm_l5_link: 0.1
+    zarm_l6_link: 0.1
+    zarm_l7_link: 0.1
+
+
+    base_link: 0.1
+    zarm_l1_link: 0.05
+    zarm_l7_end_effector: 0.02
+
+  - add_frame:
+      frame_name: "attached_object"
+      parent_frame_name: "zarm_l7_end_effector"
+      joint_name: "attach_joint"
+      joint_type: FIXED
+      fixed_transform:
+        position: [0.0, 0.0, 0.0]
+        orientation: {w: 1.0, xyz: [0.0, 0.0, 0.0]}
