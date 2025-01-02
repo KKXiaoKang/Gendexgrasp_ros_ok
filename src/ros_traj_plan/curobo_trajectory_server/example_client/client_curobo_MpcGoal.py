@@ -56,12 +56,12 @@ def main():
         # 创建目标 Pose 消息
         pose = Pose()
         pose.position.x = 0.3 # 设置目标位置x
-        pose.position.y = 0.1  # 设置目标位置y
+        pose.position.y = 0.3  # 设置目标位置y
         pose.position.z = 0.2  # 设置目标位置z
         pose.orientation.x = 0.0  # 设置目标姿态x
-        pose.orientation.y = 0.0  # 设置目标姿态y
+        pose.orientation.y = -0.70710677  # 设置目标姿态y
         pose.orientation.z = 0.0  # 设置目标姿态z
-        pose.orientation.w = 1.0  # 设置目标姿态w
+        pose.orientation.w = 0.70710677  # 设置目标姿态w
 
         # 调用服务
         call_mpc_goal_service(pose)

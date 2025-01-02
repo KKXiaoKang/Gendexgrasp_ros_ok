@@ -18,6 +18,7 @@ from curobo.util_file import join_path
 from curobo.util_file import load_yaml
 from curobo.rollout.rollout_base import Goal
 from curobo.wrap.reacher.mpc import MpcSolver, MpcSolverConfig
+from curobo.wrap.reacher.ik_solver import IKSolver, IKSolverConfig
 
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Point
@@ -129,9 +130,9 @@ class CumotionActionServer:
         self.goal = None
         self.cube_pose = PoseStamped()
         self.cube_pose.header.frame_id = 'base_link'
-        self.cube_pose.pose.position.x = 0.4
-        self.cube_pose.pose.position.y = 0.3
-        self.cube_pose.pose.position.z = 0.3
+        self.cube_pose.pose.position.x = 0.5
+        self.cube_pose.pose.position.y = 0.0
+        self.cube_pose.pose.position.z = 0.5
         self.cube_pose.pose.orientation.x = 0.0
         self.cube_pose.pose.orientation.y = 0.0
         self.cube_pose.pose.orientation.z = 0.0 
@@ -178,6 +179,9 @@ class CumotionActionServer:
         self.tf_listener = TransformListener(self.tf_buffer)
         self.source_frame = 'camera_link'
         self.target_frame = 'base_link'
+
+        # 输出mpc结果
+        self.mpc_result = None
 
         # Initialize additional attributes
         self.__esdf_client = None
@@ -228,22 +232,6 @@ class CumotionActionServer:
             # rospy.loginfo(f"Received /sensors_data_raw message: {self.current_robot_joint_space.position}")
         else:
             rospy.logwarn("Received joint_data.joint_q does not contain enough elements!")
-
-        """
-        retract_config = torch.tensor([[0.34, 0.87, 0.17, -1.22, -0.34, -0.52, 0.00]]).cuda()
-        start_state = JointState.from_position(
-            retract_config, 
-            joint_names=[
-                "zarm_l1_joint",
-                "zarm_l2_joint",
-                "zarm_l3_joint",
-                "zarm_l4_joint",
-                "zarm_l5_joint",
-                "zarm_l6_joint",
-                "zarm_l7_joint"
-            ],
-        )
-        """
 
 
     def publish_marker(self, event):
@@ -312,6 +300,8 @@ class CumotionActionServer:
         # Retrieve parameters from ROS parameter server
         collision_cache_cuboid = rospy.get_param('~collision_cache_cuboid', 20)
         collision_cache_mesh = rospy.get_param('~collision_cache_mesh', 20)
+        # collision_cache_cuboid = rospy.get_param('~collision_cache_cuboid', 30)
+        # collision_cache_mesh = rospy.get_param('~collision_cache_mesh', 10)
         interpolation_dt = rospy.get_param('~interpolation_dt', 0.02)
 
         # Define world configuration
@@ -344,11 +334,27 @@ class CumotionActionServer:
 
         robot_dict = robot_dict['robot_cfg']
 
+        # ik_config
+        self.ik_tensor_args = TensorDeviceType()
+        ik_config = IKSolverConfig.load_from_robot_config(
+            robot_dict,
+            world_file,
+            rotation_threshold=0.05,
+            position_threshold=0.005,
+            num_seeds=20,
+            self_collision_check=True,
+            self_collision_opt=True,
+            tensor_args= self.ik_tensor_args,
+            use_cuda_graph=True,
+            # use_fixed_samples=True,
+        )
+        ik_solver = IKSolver(ik_config)
+        self.ik_solver = ik_solver
+
         # MPC - Setting
         mpc_config = MpcSolverConfig.load_from_robot_config(
             robot_dict,
             world_file,
-            tensor_args=self.tensor_args,
             collision_cache={
                 'obb': collision_cache_cuboid,
                 'mesh': collision_cache_mesh,
@@ -377,32 +383,33 @@ class CumotionActionServer:
         sensors_data = rospy.wait_for_message('/sensors_data_raw', sensorsData)  # 替换 SensorMessageType 为实际消息类型
         rospy.loginfo(f"Received /sensors_data_raw message: {sensors_data.joint_data.joint_q}")
 
-        retract_cfg = mpc.rollout_fn.dynamics_model.retract_config.clone().unsqueeze(0)
-        joint_names = mpc.rollout_fn.joint_names
-        state = mpc.rollout_fn.compute_kinematics(
-            CuJointState.from_position(retract_cfg, joint_names=joint_names)
-        )
-        rospy.loginfo(f"MPC warmup state retract_cfg: {retract_cfg}") # 获取初始位置
+        # retract_cfg = mpc.rollout_fn.dynamics_model.retract_config.clone().unsqueeze(0)
+        # joint_names = mpc.rollout_fn.joint_names
+        # state = mpc.rollout_fn.compute_kinematics(
+        #     CuJointState.from_position(retract_cfg, joint_names=joint_names)
+        # )
+        # rospy.loginfo(f"MPC warmup state retract_cfg: {retract_cfg}") # 获取初始位置
 
-        current_state = CuJointState.from_position(retract_cfg, joint_names=joint_names)
-        retract_pose = Pose(state.ee_pos_seq, quaternion=state.ee_quat_seq)
-        rospy.loginfo(f"state.ee_pos_seq: {state.ee_pos_seq}") # 获取末端位置
-        rospy.loginfo(f"state.ee_quat_seq: {state.ee_quat_seq}") # 获取末端姿态
+        # self.current_state = CuJointState.from_position(retract_cfg, joint_names=joint_names)
+        # retract_pose = Pose(state.ee_pos_seq, quaternion=state.ee_quat_seq)
+        # rospy.loginfo(f"state.ee_pos_seq: {state.ee_pos_seq}") # 获取末端位置
+        # rospy.loginfo(f"state.ee_quat_seq: {state.ee_quat_seq}") # 获取末端姿态
 
-        goal = Goal(
-            current_state=current_state,
-            goal_state=CuJointState.from_position(retract_cfg, joint_names=joint_names),
-            goal_pose=retract_pose,
-        )
-        self.goal_buffer = mpc.setup_solve_single(goal, 1)
-        mpc.update_goal(self.goal_buffer)
-        # mpc_result = mpc.step(current_state, max_attempts=2)
-        # rospy.loginfo(f"MPC warmup mpc_result: { mpc_result.js_action.position.cpu().numpy()}") # 获取position位置
-
+        # self.goal = Goal(
+        #     current_state=self.current_state,
+        #     goal_state=CuJointState.from_position(retract_cfg, joint_names=joint_names),
+        #     goal_pose=retract_pose,
+        # )
+        # self.goal_buffer = mpc.setup_solve_single(self.goal, 1)
+        # mpc.update_goal(self.goal_buffer)
+        # self.mpc_result = mpc.step(self.current_state, max_attempts=2)
+        
         # 碰撞世界检查声明
         self.__world_collision = mpc.world_coll_checker
         rospy.loginfo('cuMotion_MPC_Server is ready for planning queries!')
 
+        # 控制说明
+        self.retract_cfg_increment = -0.2
 
     def send_request(self, aabb_min_m, aabb_size_m):
         self.__esdf_req.aabb_min_m = aabb_min_m
@@ -426,7 +433,7 @@ class CumotionActionServer:
 
     def update_mpc_goal(self):
         """
-        更新目标状态 (例如更新目标位姿或目标位置)
+            更新目标状态 (例如更新目标位姿或目标位置)
         """
         self.curobo_joint_state = torch.tensor([self.current_robot_joint_space.position[0], 
                                                 self.current_robot_joint_space.position[1],
@@ -449,15 +456,52 @@ class CumotionActionServer:
                  self.cube_pose.pose.orientation.y, self.cube_pose.pose.orientation.z]
             ).cuda()
 
-            # 判断是否需要更新目标
-            # if self.past_pose is None or torch.norm(cube_position - self.past_pose) > 1e-3:
+            # TODO:通过更改Pose作为mpc追踪的点
+            # if self.past_pose is None or torch.norm(cube_position - self.past_pose) > 1e-3: # 触发更新条件
+            # ik_goal = Pose(position=self.tensor_args.to_device(cube_position), 
+            #                quaternion=self.tensor_args.to_device(cube_orientation))
+            # # TODO:正常做法
+            # self.goal_buffer.goal_pose.copy_(ik_goal)
+            # self.mpc.update_goal(self.goal_buffer)
+            # self.past_pose = cube_position
+            
+            # # TODO:通过Goal作为全局的点 | 提示张量维度不对
             ik_goal = Pose(position=self.tensor_args.to_device(cube_position), 
                            quaternion=self.tensor_args.to_device(cube_orientation))
-            self.goal_buffer.goal_pose.copy_(ik_goal)
+            result = self.ik_solver.solve_batch(ik_goal)
+            rospy.loginfo(f"ik_solver result: {result}")
+            
+            ik_position = result.js_solution.position
+            retract_cfg = self.mpc.rollout_fn.dynamics_model.retract_config.clone().unsqueeze(0)
+
+            if ik_position.shape[-1] != retract_cfg.shape[-1]:
+                rospy.logerr("Dimension mismatch: ik_position and retract_cfg have different lengths!")
+            else:
+                # 更新 retract_cfg 的值
+                retract_cfg[0] = ik_position[0]
+            rospy.loginfo(f"MPC update_mpc_goal retract_cfg: {retract_cfg}") # 获取初始位置
+
+            # retract_cfg[0, 0] += self.retract_cfg_increment
+            # rospy.loginfo(f"Updated retract_cfg: {retract_cfg}")
+            # self.retract_cfg_increment -= 0.4
+            
+            joint_names = self.mpc.rollout_fn.joint_names
+            state = self.mpc.rollout_fn.compute_kinematics(
+                CuJointState.from_position(retract_cfg, joint_names=joint_names)
+            )
+            self.current_state = CuJointState.from_position(retract_cfg, joint_names=joint_names)
+            retract_pose = Pose(state.ee_pos_seq, quaternion=state.ee_quat_seq)
+            rospy.loginfo(f"state.ee_pos_seq: {state.ee_pos_seq}") # 获取末端位置
+            rospy.loginfo(f"state.ee_quat_seq: {state.ee_quat_seq}") # 获取末端姿态
+
+            self.goal = Goal(
+                current_state=self.current_state,
+                goal_state=CuJointState.from_position(retract_cfg, joint_names=joint_names),
+                goal_pose=retract_pose,
+            )
+            self.goal_buffer = self.mpc.setup_solve_single(self.goal, 1)
             self.mpc.update_goal(self.goal_buffer)
-            rospy.loginfo(f"Updated MPC goal to {ik_goal}")
-            rospy.loginfo(f"Current goal_buffer: {self.goal_buffer}")
-            self.past_pose = cube_position
+            
 
     def run(self):
         while not rospy.is_shutdown():
@@ -467,17 +511,19 @@ class CumotionActionServer:
             # TODO:更新目标
             self.update_mpc_goal()
 
-            # TODO:更新下一步状态
-            mpc_result = self.mpc.step(self.current_curobo_joint_space, max_attempts=2)
-
             # TODO:发送CMD命令
-            if mpc_result and hasattr(mpc_result, 'js_action') and mpc_result.js_action:
-                joint_positions = mpc_result.js_action.position
+            if self.mpc_result and hasattr(self.mpc_result, 'js_action') and self.mpc_result.js_action:
+                joint_positions = self.mpc_result.js_action.position
                 # Convert to list or numpy array for publishing
                 joint_positions_list = joint_positions.squeeze().cpu().numpy().tolist()  # Remove singleton dimensions and move to CPU
-                # rospy.loginfo(f"Control command joint positions: {joint_positions_list}")
+                rospy.loginfo(f"Control command joint positions: {joint_positions_list}")
                 # control-CMD
                 self.control_robot_arm_cmd(joint_positions_list)
+            
+            # TODO:更新下一步状态
+            self.mpc_result = self.mpc.step(self.current_curobo_joint_space, max_attempts=2)
+
+
 
 def map_update_thread(cumotion_action_server):
     """线程中运行的地图更新逻辑"""
