@@ -55,9 +55,13 @@ import threading
 # from kuavo_robot_interfaces.msg import CuRobotArmStatus
 # from nvblox_msgs.srv import EsdfAndGradients
 
+USE_ESDF_NVBLOX_MAP = True # 是否使用esdf地图
 global_esdf_grid = None # 全局esdf地图 | 用于存放当前规划所用的图
 origin_esdf_grid = None # 实时后台更新的esdf地图
 tsdf_response = None # tsdf_response结果
+
+if USE_ESDF_NVBLOX_MAP:
+    if_first_map_init_flag = False # 第一张esdf地图是否更新完
 """
     # 机器人状态 | True 为 go状态 | False 为 back状态
 """
@@ -492,6 +496,14 @@ class CumotionActionServer:
             
 
     def run(self):
+        if USE_ESDF_NVBLOX_MAP:
+            rospy.loginfo("...USE_ESDF_NVBLOX_MAP...")
+            global if_first_map_init_flag
+            while not if_first_map_init_flag:
+                rospy.loginfo("Waiting for first map initialization...")
+                time.sleep(1) # 等待esdf地图初始化完成
+            rospy.loginfo("ESDF Map initialization is complete...")
+
         while not rospy.is_shutdown():
             # 测试
             self.mpc.get_visual_rollouts()
@@ -517,8 +529,9 @@ def map_update_thread(cumotion_action_server):
     """线程中运行的地图更新逻辑"""
     global IF_PROCESS_VOXEL_MAP_SATUS
     global origin_esdf_grid
-    global tsdf_response
-
+    global tsdf_response  
+    global USE_ESDF_NVBLOX_MAP
+    
     origin_voxel_dims = [2.0, 2.0, 2.0]
     while not rospy.is_shutdown():
         if not IF_PROCESS_VOXEL_MAP_SATUS:
@@ -538,6 +551,9 @@ def map_update_thread(cumotion_action_server):
             if esdf_response  is not None:
                 # rospy.loginfo("ESDF map updated successfully")
                 tsdf_response = esdf_response 
+                if USE_ESDF_NVBLOX_MAP:
+                    global if_first_map_init_flag 
+                    if_first_map_init_flag = True # 第一个esdf地图更新完成
             else:
                 rospy.logwarn("Failed to update ESDF map")
         else:
