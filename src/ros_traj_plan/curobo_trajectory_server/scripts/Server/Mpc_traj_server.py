@@ -139,7 +139,8 @@ class CumotionActionServer:
         self.cube_pose.pose.orientation.w = 0.70710677 
         rospy.Timer(rospy.Duration(0.5), self.publish_marker)
         self.mpc_l_arm_marker_pub = rospy.Publisher('/mpc_l_arm_goal/marker', Marker, queue_size=10)
-        
+        self._mpc_cmd_goal_sub = rospy.Subscriber('/mpc_cmd_result', PoseStamped, self.mpc_cmd_goal_callback)
+
         # 记录上一次末端追踪的pose
         self.past_position = None
         self.past_orientation = None
@@ -203,6 +204,14 @@ class CumotionActionServer:
             # 创建esdf客户端
             self.__esdf_client = rospy.ServiceProxy(self.esdf_service_name, EsdfAndGradients)
             rospy.loginfo(f"Connected to {self.esdf_service_name} service")
+
+
+    def mpc_cmd_goal_callback(self, msg):
+        try:
+            self.cube_pose = msg
+            # rospy.loginfo(f"Received mpc_cmd_result message: {self.cube_pose}")
+        except Exception as e:
+            rospy.logerr(f"Error in mpc_cmd_goal_callback: {e}")
 
     def mpc_goal_callback(self, request):
         try:
