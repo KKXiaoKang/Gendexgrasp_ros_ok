@@ -20,6 +20,11 @@ from curobo.rollout.rollout_base import Goal
 from curobo.wrap.reacher.mpc import MpcSolver, MpcSolverConfig
 from curobo.wrap.reacher.ik_solver import IKSolver, IKSolverConfig
 
+from curobo.wrap.reacher.motion_gen import MotionGen
+from curobo.wrap.reacher.motion_gen import MotionGenConfig
+from curobo.wrap.reacher.motion_gen import MotionGenPlanConfig
+from curobo.wrap.reacher.motion_gen import MotionGenStatus
+
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Point
 from geometry_msgs.msg import Vector3
@@ -59,6 +64,7 @@ USE_ESDF_NVBLOX_MAP = True # 是否使用esdf地图
 global_esdf_grid = None # 全局esdf地图 | 用于存放当前规划所用的图
 origin_esdf_grid = None # 实时后台更新的esdf地图
 tsdf_response = None # tsdf_response结果
+IF_MPC_FIRST_SOLVE_FLAG = True # 第一次MPC是否求解成功
 
 if USE_ESDF_NVBLOX_MAP:
     if_first_map_init_flag = False # 第一张esdf地图是否更新完
@@ -275,7 +281,7 @@ class CumotionActionServer:
 
         # 设置 Marker 的颜色（例如，红色）
         marker.color.r = 1.0
-        marker.color.g = 0.0
+        marker.color.g = 1.0
         marker.color.b = 0.0
         marker.color.a = 1.0  # alpha 透明度
 
@@ -375,6 +381,7 @@ class CumotionActionServer:
             use_cuda_graph=True,
             use_cuda_graph_metrics=True,
             use_cuda_graph_full_step=False,
+            # self_collision_check=False, 
             self_collision_check=True,
             use_mppi=True,
             use_lbfgs=False,
@@ -385,7 +392,7 @@ class CumotionActionServer:
 
         mpc = MpcSolver(mpc_config)
         self.mpc = mpc
-        self.tensor_args = self.mpc.tensor_args
+        self.__tensor_args = self.mpc.tensor_args
 
         self.__robot_base_frame = mpc.kinematics.base_link
         rospy.loginfo(f"Robot base frame: {self.__robot_base_frame}")
@@ -402,6 +409,67 @@ class CumotionActionServer:
         # 控制说明
         self.retract_cfg_increment = -0.2
 
+        # # Initialize motion generation config
+        # motion_gen_config = MotionGenConfig.load_from_robot_config(
+        #     robot_dict,
+        #     world_file,
+        #     self.tensor_args,
+        #     interpolation_dt=interpolation_dt,
+        #     collision_cache={
+        #         'obb': collision_cache_cuboid,
+        #         'mesh': collision_cache_mesh,
+        #     },
+        #     collision_checker_type=CollisionCheckerType.VOXEL,
+        #     ee_link_name=self.tool_frame,
+        # )
+
+        # # Initialize the motion generator
+        # motion_gen = MotionGen(motion_gen_config)
+        # self.motion_gen = motion_gen
+        # self.__robot_base_frame = motion_gen.kinematics.base_link
+        # rospy.loginfo(f"Robot base frame: {self.__robot_base_frame}")
+        # motion_gen.warmup(enable_graph=True)
+
+        # self.__world_collision = motion_gen.world_coll_checker
+        # if not self.add_ground_plane:
+        #     motion_gen.clear_world_cache()
+
+        # rospy.loginfo('cuMotion_Motion_Server is ready for planning queries!')
+
+    def update_voxel_grid(self):
+        global global_robot_arm_plan_status
+        global global_esdf_grid
+        global origin_esdf_grid
+        global IF_PROCESS_VOXEL_MAP_SATUS
+        global tsdf_response
+
+        # 获取ESDF地图并更新
+        origin_esdf_grid = self.get_esdf_voxel_grid(tsdf_response)
+
+        IF_PROCESS_VOXEL_MAP_SATUS = True  # 正在进行体素图处理
+        rospy.loginfo('Calling ESDF service')
+
+        # 判断机器人手臂的状态
+        if global_robot_arm_plan_status:
+            rospy.loginfo('Updated go状态 ESDF grid')
+            esdf_grid = origin_esdf_grid  # 使用当前的origin实时更新的地图
+        else:
+            rospy.loginfo('Updated back状态 ESDF grid')
+            esdf_grid = global_esdf_grid  # 使用上一次的全局地图
+
+        # ESDF地图描述
+        if torch.max(esdf_grid.feature_tensor) <= (-1000.0 + 0.5 * self.__voxel_size + 1e-5):
+            rospy.logerr('ESDF data is empty, try again after few seconds.')
+            return False
+
+        # 更新体素地图，假设__world_collision是处理碰撞检测的类
+        self.__world_collision.update_voxel_data(esdf_grid)
+        rospy.loginfo('Updated ESDF grid')
+
+        # 体素地图更新完毕
+        IF_PROCESS_VOXEL_MAP_SATUS = False
+        return True
+    
     def send_request(self, aabb_min_m, aabb_size_m):
         self.__esdf_req.aabb_min_m = aabb_min_m
         self.__esdf_req.aabb_size_m = aabb_size_m
@@ -415,7 +483,213 @@ class CumotionActionServer:
         except rospy.ServiceException as e:
             rospy.logerr(f"Service call failed: {e}")
             return None
-        
+
+    def get_esdf_voxel_grid(self, esdf_data):
+        DEBUG_MODE = True
+
+        esdf_array = esdf_data.esdf_and_gradients # 提取esdf网格和梯度信息
+        array_shape = [ # 从 esdf_array 的布局信息中读取体素网格的三维形状 [x, y, z]，表示体素在每个维度上的数量
+            esdf_array.layout.dim[0].size,
+            esdf_array.layout.dim[1].size,
+            esdf_array.layout.dim[2].size,
+        ]
+        if DEBUG_MODE:
+            rospy.loginfo("-------------- ESDF DEBUG --------------")
+            rospy.loginfo(f"ESDF array shape: {array_shape}")
+
+        # TODO:添加
+        array_data = np.array(esdf_array.data) # 将 esdf_array.data 转换为 NumPy 数组 array_data，方便后续数据处理
+
+        # 将 array_data 转换到目标设备上（如 GPU），确保数据存储在合适的计算设备上加速处理
+        array_data = self.__tensor_args.to_device(array_data) 
+
+        if DEBUG_MODE:
+            rospy.loginfo(f"ESDF array data: {array_data}")
+
+        # Array data is reshaped to x y z channels
+        array_data = array_data.view(array_shape[0], array_shape[1], array_shape[2]).contiguous() # 调整 array_data 的形状，使其匹配体素网格的三维形状 [x, y, z]，并保持内存连续性以优化性
+
+        # Array is squeezed to 1 dimension
+        array_data = array_data.reshape(-1, 1) # 将 array_data 压缩为二维数组（[-1, 1]），即每一行表示一个体素的值，用于后续处理
+
+        # nvblox uses negative distance inside obstacles, cuRobo needs the opposite:
+        array_data = -1 * array_data # 将距离值取反，将内部障碍物的负距离值转化为正距离值，以匹配 cuRobo 的要求
+
+        # nvblox assigns a value of -1000.0 for unobserved voxels, making
+        array_data[array_data >= 1000.0] = -1000.0  # 将未观测到的体素（值为 1000.0 或更大）重设为 -1000.0，以表示未观测的区域符合 cuRobo 规范
+
+        # nvblox distance are at origin of each voxel, cuRobo's esdf needs it to be at faces
+        array_data = array_data + 0.5 * self.__voxel_size # 将体素中心的距离值转换为体素表面距离，使距离值表示体素的表面位置
+
+        """
+            使用生成的数据创建 CuVoxelGrid 对象 esdf_grid
+            设置网格的名称、维度、位姿、体素大小、数据类型和特征数据。位置 pose 包括位置坐标 [x, y, z] 和姿态的四元数表示 [qw, qx, qy, qz]
+        """
+        esdf_grid = CuVoxelGrid(
+            name='world_voxel',
+            dims=self.__voxel_dims,
+            pose=[
+                self.grid_position[0],
+                self.grid_position[1],
+                self.grid_position[2],
+                1,
+                0.0,
+                0.0,
+                0,
+            ],  # x, y, z, qw, qx, qy, qz
+            voxel_size=self.__voxel_size,
+            feature_dtype=torch.float32,
+            feature_tensor=array_data,
+        )
+
+        return esdf_grid # 返回生成的 CuVoxelGrid 对象 esdf_grid，用于描述 cuRobo 的碰撞检测环境
+
+    def get_cumotion_collision_object(self, mv_object: CollisionObject):
+        objs = []
+        pose = mv_object.pose
+
+        world_pose = [
+            pose.position.x,
+            pose.position.y,
+            pose.position.z,
+            pose.orientation.w,
+            pose.orientation.x,
+            pose.orientation.y,
+            pose.orientation.z,
+        ]
+        world_pose = Pose.from_list(world_pose)
+        supported_objects = True
+        if len(mv_object.primitives) > 0:
+            for k in range(len(mv_object.primitives)):
+                pose = mv_object.primitive_poses[k]
+                primitive_pose = [
+                    pose.position.x,
+                    pose.position.y,
+                    pose.position.z,
+                    pose.orientation.w,
+                    pose.orientation.x,
+                    pose.orientation.y,
+                    pose.orientation.z,
+                ]
+                object_pose = world_pose.multiply(Pose.from_list(primitive_pose)).tolist()
+
+                if mv_object.primitives[k].type == SolidPrimitive.BOX:
+                    # cuboid:
+                    dims = mv_object.primitives[k].dimensions
+                    obj = Cuboid(
+                        name=str(mv_object.id) + '_' + str(k) + '_cuboid',
+                        pose=object_pose,
+                        dims=dims,
+                    )
+                    objs.append(obj)
+                elif mv_object.primitives[k].type == SolidPrimitive.SPHERE:
+                    # sphere:
+                    radius = mv_object.primitives[k].dimensions[
+                        mv_object.primitives[k].SPHERE_RADIUS
+                    ]
+                    obj = Sphere(
+                        name=str(mv_object.id) + '_' + str(k) + '_sphere',
+                        pose=object_pose,
+                        radius=radius,
+                    )
+                    objs.append(obj)
+                elif mv_object.primitives[k].type == SolidPrimitive.CYLINDER:
+                    # cylinder:
+                    cyl_height = mv_object.primitives[k].dimensions[
+                        mv_object.primitives[k].CYLINDER_HEIGHT
+                    ]
+                    cyl_radius = mv_object.primitives[k].dimensions[
+                        mv_object.primitives[k].CYLINDER_RADIUS
+                    ]
+                    obj = Cylinder(
+                        name=str(mv_object.id) + '_' + str(k) + '_cylinder',
+                        pose=object_pose,
+                        height=cyl_height,
+                        radius=cyl_radius,
+                    )
+                    objs.append(obj)
+                elif mv_object.primitives[k].type == SolidPrimitive.CONE:
+                    rospy.logerr('Cone primitive is not supported')
+                    supported_objects = False
+                else:
+                    rospy.logerr('Unknown primitive type')
+                    supported_objects = False
+        if len(mv_object.meshes) > 0:
+            for k in range(len(mv_object.meshes)):
+                pose = mv_object.mesh_poses[k]
+                mesh_pose = [
+                    pose.position.x,
+                    pose.position.y,
+                    pose.position.z,
+                    pose.orientation.w,
+                    pose.orientation.x,
+                    pose.orientation.y,
+                    pose.orientation.z,
+                ]
+                object_pose = world_pose.multiply(Pose.from_list(mesh_pose)).tolist()
+                verts = mv_object.meshes[k].vertices
+                verts = [[v.x, v.y, v.z] for v in verts]
+                tris = [
+                    [v.vertex_indices[0], v.vertex_indices[1], v.vertex_indices[2]]
+                    for v in mv_object.meshes[k].triangles
+                ]
+
+                obj = Mesh(
+                    name=str(mv_object.id) + '_' + str(len(objs)) + '_mesh',
+                    pose=object_pose,
+                    vertices=verts,
+                    faces=tris,
+                )
+                objs.append(obj)
+        return objs, supported_objects
+
+    def update_world_objects(self, moveit_objects):
+        rospy.loginfo("Calling update_world_objects function.")
+        world_update_status = True
+        if len(moveit_objects) > 0:
+            cuboid_list = []
+            sphere_list = []
+            cylinder_list = []
+            mesh_list = []
+            for i, obj in enumerate(moveit_objects):
+                cumotion_objects, world_update_status = self.get_cumotion_collision_object(obj)
+                for cumotion_object in cumotion_objects:
+                    if isinstance(cumotion_object, Cuboid):
+                        cuboid_list.append(cumotion_object)
+                    elif isinstance(cumotion_object, Cylinder):
+                        cylinder_list.append(cumotion_object)
+                    elif isinstance(cumotion_object, Sphere):
+                        sphere_list.append(cumotion_object)
+                    elif isinstance(cumotion_object, Mesh):
+                        mesh_list.append(cumotion_object)
+
+            world_model = WorldConfig(
+                cuboid=cuboid_list,
+                cylinder=cylinder_list,
+                sphere=sphere_list,
+                mesh=mesh_list,
+            ).get_collision_check_world()
+            rospy.loginfo("Calling mpc.update_world(world_model)  function.") # 开启esdf服务查询时不会调取该服务
+            self.mpc.update_world(world_model)
+        if self.__read_esdf_grid: # 从esdf当中读取当前世界碰撞距离
+            rospy.loginfo("Calling 更新体素世界 world_update_status = self.update_voxel_grid() function.")
+            world_update_status = self.update_voxel_grid() # 根据全局状态是go的状态还是back的状态 | 判断是否拿上一张图进行避障返回
+        if self.publish_curobo_world_as_voxels: # 是否发布体素世界
+            rospy.loginfo("Calling 发布体素世界 world_update_status = self.publish_voxels(xyzr_tensor) function.")
+            voxels = self.__world_collision.get_esdf_in_bounding_box(
+                Cuboid(
+                    name='test',
+                    pose=[0.0, 0.0, 0.0, 1, 0, 0, 0],  # x, y, z, qw, qx, qy, qz
+                    dims=self.__voxel_dims,
+                ),
+                voxel_size=self.publish_voxel_size,
+            )
+            xyzr_tensor = voxels.xyzr_tensor.clone()
+            xyzr_tensor[..., 3] = voxels.feature_tensor
+            self.publish_voxels(xyzr_tensor)
+        return world_update_status
+
+
     def execute_callback(self, goal_handle):
         """
             TODO: 用于后续更新mpc追踪的ik_goal(具体更新cube_pose的PoseStamped数据类型即可)
@@ -426,6 +700,7 @@ class CumotionActionServer:
         """
             更新目标状态 (例如更新目标位姿或目标位置)
         """
+        global IF_MPC_FIRST_SOLVE_FLAG
         self.curobo_joint_state = torch.tensor([self.current_robot_joint_space.position[0], 
                                                 self.current_robot_joint_space.position[1],
                                                 self.current_robot_joint_space.position[2],
@@ -450,50 +725,53 @@ class CumotionActionServer:
             # TODO:通过更改Pose作为mpc追踪的点
             # if self.past_position is None or torch.norm(cube_position - self.past_position) > 1e-3: # 触发更新条件
             if self.past_position is None or torch.norm(cube_position - self.past_position) > 1e-3 or not torch.allclose(cube_orientation, self.past_orientation, atol=1e-3): # 触发更新条件
-                """
+                if IF_MPC_FIRST_SOLVE_FLAG:                
+                    # TODO:通过Goal作为全局的点 
+                    self.past_position = cube_position
+                    self.past_orientation = cube_orientation
+
+                    ik_goal = Pose(position=self.tensor_args.to_device(cube_position), 
+                                   quaternion=self.tensor_args.to_device(cube_orientation))
+                    result = self.ik_solver.solve_batch(ik_goal)
+                    # rospy.loginfo(f"ik_solver result: {result}")
+
+                    ik_position = result.js_solution.position
+                    retract_cfg = self.mpc.rollout_fn.dynamics_model.retract_config.clone().unsqueeze(0)
+
+                    if ik_position.shape[-1] != retract_cfg.shape[-1]:
+                        rospy.logerr("Dimension mismatch: ik_position and retract_cfg have different lengths!")
+                    else:
+                        # 更新 retract_cfg 的值
+                        retract_cfg[0] = ik_position[0]
+                    # rospy.loginfo(f"MPC update_mpc_goal retract_cfg: {retract_cfg}") # 获取初始位置
+
+                    joint_names = self.mpc.rollout_fn.joint_names
+                    state = self.mpc.rollout_fn.compute_kinematics(
+                        CuJointState.from_position(retract_cfg, joint_names=joint_names)
+                    )
+                    self.current_state = CuJointState.from_position(retract_cfg, joint_names=joint_names)
+                    retract_pose = Pose(state.ee_pos_seq, quaternion=state.ee_quat_seq)
+                    # rospy.loginfo(f"state.ee_pos_seq: {state.ee_pos_seq}") # 获取末端位置
+                    # rospy.loginfo(f"state.ee_quat_seq: {state.ee_quat_seq}") # 获取末端姿态
+
+                    self.goal = Goal(
+                        current_state=self.current_state,
+                        goal_state=CuJointState.from_position(retract_cfg, joint_names=joint_names),
+                        goal_pose=retract_pose,
+                    )
+                    self.goal_buffer = self.mpc.setup_solve_single(self.goal, 1)
+                    self.mpc.update_goal(self.goal_buffer)
+                    # rospy.loginfo("--------- MPC First Solve -------") # 获取初始位置
+                    # IF_MPC_FIRST_SOLVE_FLAG = False
+                else:
+                    # TODO:通过Goal作为全局的点 | 提示张量维度不对
+                    self.past_position = cube_position
+                    self.past_orientation = cube_orientation
                     ik_goal = Pose(position=self.tensor_args.to_device(cube_position), 
                                    quaternion=self.tensor_args.to_device(cube_orientation))
                     # TODO:正常做法
                     self.goal_buffer.goal_pose.copy_(ik_goal)
                     self.mpc.update_goal(self.goal_buffer)
-                    self.past_position = cube_position
-                """
-                # # TODO:通过Goal作为全局的点 | 提示张量维度不对
-                self.past_position = cube_position
-                self.past_orientation = cube_orientation
-
-                ik_goal = Pose(position=self.tensor_args.to_device(cube_position), 
-                               quaternion=self.tensor_args.to_device(cube_orientation))
-                result = self.ik_solver.solve_batch(ik_goal)
-                rospy.loginfo(f"ik_solver result: {result}")
-            
-                ik_position = result.js_solution.position
-                retract_cfg = self.mpc.rollout_fn.dynamics_model.retract_config.clone().unsqueeze(0)
-
-                if ik_position.shape[-1] != retract_cfg.shape[-1]:
-                    rospy.logerr("Dimension mismatch: ik_position and retract_cfg have different lengths!")
-                else:
-                    # 更新 retract_cfg 的值
-                    retract_cfg[0] = ik_position[0]
-                rospy.loginfo(f"MPC update_mpc_goal retract_cfg: {retract_cfg}") # 获取初始位置
-
-                joint_names = self.mpc.rollout_fn.joint_names
-                state = self.mpc.rollout_fn.compute_kinematics(
-                    CuJointState.from_position(retract_cfg, joint_names=joint_names)
-                )
-                self.current_state = CuJointState.from_position(retract_cfg, joint_names=joint_names)
-                retract_pose = Pose(state.ee_pos_seq, quaternion=state.ee_quat_seq)
-                rospy.loginfo(f"state.ee_pos_seq: {state.ee_pos_seq}") # 获取末端位置
-                rospy.loginfo(f"state.ee_quat_seq: {state.ee_quat_seq}") # 获取末端姿态
-
-                self.goal = Goal(
-                    current_state=self.current_state,
-                    goal_state=CuJointState.from_position(retract_cfg, joint_names=joint_names),
-                    goal_pose=retract_pose,
-                )
-                self.goal_buffer = self.mpc.setup_solve_single(self.goal, 1)
-                self.mpc.update_goal(self.goal_buffer)
-            
 
     def run(self):
         if USE_ESDF_NVBLOX_MAP:
@@ -503,6 +781,10 @@ class CumotionActionServer:
                 rospy.loginfo("Waiting for first map initialization...")
                 time.sleep(1) # 等待esdf地图初始化完成
             rospy.loginfo("ESDF Map initialization is complete...")
+
+        # 更新世界描述
+        world_objects = []
+        world_update_status = self.update_world_objects(world_objects) # 更新世界描述 | 根据规划的状态 go 还是 back 状态 进行地图获取调整 | 
 
         while not rospy.is_shutdown():
             # 测试
@@ -523,7 +805,50 @@ class CumotionActionServer:
             # TODO:更新下一步状态
             self.mpc_result = self.mpc.step(self.current_curobo_joint_space, max_attempts=2)
 
+    def publish_voxels(self, voxels):
+        vox_size = self.publish_voxel_size
 
+        # create marker:
+        marker = Marker()
+        marker.header.frame_id = self.__robot_base_frame
+        marker.id = 0
+        marker.type = 6  # cube list
+        marker.ns = 'curobo_world'
+        marker.action = 0
+        marker.pose.orientation.w = 1.0
+        marker.lifetime = rospy.Duration(1000.0)  # 设置持续时间
+        marker.frame_locked = False
+        marker.scale.x = vox_size
+        marker.scale.y = vox_size
+        marker.scale.z = vox_size
+
+        # get only voxels that are inside surfaces:
+
+        voxels = voxels[voxels[:, 3] >= 0.0]
+        vox = voxels.view(-1, 4).cpu().numpy()
+        marker.points = []
+
+        for i in range(min(len(vox), self.max_publish_voxels)):
+
+            pt = Point()
+            pt.x = float(vox[i, 0])
+            pt.y = float(vox[i, 1])
+            pt.z = float(vox[i, 2])
+            color = ColorRGBA()
+            d = vox[i, 3]
+
+            rgba = [min(1.0, 1.0 - float(d)), 0.0, 0.0, 1.0]
+
+            color.r = rgba[0]
+            color.g = rgba[1]
+            color.b = rgba[2]
+            color.a = rgba[3]
+            marker.colors.append(color)
+            marker.points.append(pt)
+        # publish voxels:
+        marker.header.stamp = rospy.Time.now() 
+
+        self.voxel_pub.publish(marker)
 
 def map_update_thread(cumotion_action_server):
     """线程中运行的地图更新逻辑"""
