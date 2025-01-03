@@ -95,7 +95,7 @@ JOINT_TRAJ_BACK = None
 """
 IF_PROCESS_VOXEL_MAP_SATUS = False
 
-DEBUG_MODE_FLAG = False
+DEBUG_MODE_FLAG = True
 
 JOINT_NAME_LIST = [ "zarm_l1_link", "zarm_l2_link", "zarm_l3_link", "zarm_l4_link", "zarm_l5_link", "zarm_l6_link", "zarm_l7_link",
                     "zarm_r1_link", "zarm_r2_link", "zarm_r3_link", "zarm_r4_link", "zarm_r5_link", "zarm_r6_link", "zarm_r7_link"]
@@ -370,6 +370,22 @@ class CumotionActionServer:
         self.ik_solver = ik_solver
 
         # MPC - Setting
+        """
+            mpc_config = MpcSolverConfig.load_from_robot_config(
+                robot_cfg,
+                world_cfg,
+                use_cuda_graph=True,
+                use_cuda_graph_metrics=True,
+                use_cuda_graph_full_step=False,
+                self_collision_check=True,
+                collision_checker_type=CollisionCheckerType.BLOX,
+                use_mppi=True,
+                use_lbfgs=False,
+                use_es=False,
+                store_rollouts=True,
+                step_dt=0.02,
+                )
+        """
         mpc_config = MpcSolverConfig.load_from_robot_config(
             robot_dict,
             world_file,
@@ -378,10 +394,10 @@ class CumotionActionServer:
                 'mesh': collision_cache_mesh,
             },
             collision_checker_type=CollisionCheckerType.VOXEL,
+            # collision_checker_type=CollisionCheckerType.BLOX,
             use_cuda_graph=True,
             use_cuda_graph_metrics=True,
             use_cuda_graph_full_step=False,
-            # self_collision_check=False, 
             self_collision_check=True,
             use_mppi=True,
             use_lbfgs=False,
@@ -402,8 +418,8 @@ class CumotionActionServer:
         sensors_data = rospy.wait_for_message('/sensors_data_raw', sensorsData)  # 替换 SensorMessageType 为实际消息类型
         rospy.loginfo(f"Received /sensors_data_raw message: {sensors_data.joint_data.joint_q}")
         
-        # 碰撞世界检查声明
-        self.__world_collision = mpc.world_coll_checker
+        self.__world_collision = mpc.world_coll_checker # 碰撞世界检查声明
+        # self.__world_collision.enable_voxel(enable=True, name="world_voxel", env_idx=0) # 启动体素描述
         rospy.loginfo('cuMotion_MPC_Server is ready for planning queries!')
 
         # 控制说明
@@ -689,7 +705,6 @@ class CumotionActionServer:
             self.publish_voxels(xyzr_tensor)
         return world_update_status
 
-
     def execute_callback(self, goal_handle):
         """
             TODO: 用于后续更新mpc追踪的ik_goal(具体更新cube_pose的PoseStamped数据类型即可)
@@ -793,6 +808,9 @@ class CumotionActionServer:
             # TODO:更新目标
             self.update_mpc_goal()
 
+            # TODO:更新下一步状态
+            self.mpc_result = self.mpc.step(self.current_curobo_joint_space, max_attempts=2)
+
             # TODO:发送CMD命令
             if self.mpc_result and hasattr(self.mpc_result, 'js_action') and self.mpc_result.js_action:
                 joint_positions = self.mpc_result.js_action.position
@@ -802,9 +820,6 @@ class CumotionActionServer:
                 # control-CMD
                 self.control_robot_arm_cmd(joint_positions_list)
             
-            # TODO:更新下一步状态
-            self.mpc_result = self.mpc.step(self.current_curobo_joint_space, max_attempts=2)
-
     def publish_voxels(self, voxels):
         vox_size = self.publish_voxel_size
 
