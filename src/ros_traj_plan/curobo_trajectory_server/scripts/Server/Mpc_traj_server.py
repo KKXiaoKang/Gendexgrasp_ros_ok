@@ -99,12 +99,16 @@ DEBUG_MODE_FLAG = True
 
 JOINT_NAME_LIST = [ "zarm_l1_link", "zarm_l2_link", "zarm_l3_link", "zarm_l4_link", "zarm_l5_link", "zarm_l6_link", "zarm_l7_link",
                     "zarm_r1_link", "zarm_r2_link", "zarm_r3_link", "zarm_r4_link", "zarm_r5_link", "zarm_r6_link", "zarm_r7_link"]
+
+DEBUG_MODE = True # 调试模式
 class CumotionActionServer:
     def __init__(self):
         rospy.init_node('trajectory_server_node', anonymous=True)
 
         # Declare and initialize parameters
         self.tensor_args = TensorDeviceType()
+        self.nvblox_tensor_args = TensorDeviceType()
+        
         # self.robot_config = rospy.get_param('~robot', '/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/kuavo_assets/biped_s40/urdf/biped_s40.yml')
         self.robot_config = rospy.get_param('~robot', '/home/lab/GenDexGrasp/Gendexgrasp_ros_ok/kuavo_assets/biped_s42/urdf/biped_s42.yml')
         self.time_dilation_factor = rospy.get_param('~time_dilation_factor', 1.0)
@@ -281,7 +285,7 @@ class CumotionActionServer:
 
         # 设置 Marker 的颜色（例如，红色）
         marker.color.r = 1.0
-        marker.color.g = 1.0
+        marker.color.g = 0.0
         marker.color.b = 0.0
         marker.color.a = 1.0  # alpha 透明度
 
@@ -408,7 +412,7 @@ class CumotionActionServer:
 
         mpc = MpcSolver(mpc_config)
         self.mpc = mpc
-        self.__tensor_args = self.mpc.tensor_args
+        self.tensor_args = self.mpc.tensor_args
 
         self.__robot_base_frame = mpc.kinematics.base_link
         rospy.loginfo(f"Robot base frame: {self.__robot_base_frame}")
@@ -419,17 +423,20 @@ class CumotionActionServer:
         rospy.loginfo(f"Received /sensors_data_raw message: {sensors_data.joint_data.joint_q}")
         
         self.__world_collision = mpc.world_coll_checker # 碰撞世界检查声明
+        self.__world_model = mpc.world_collision # 世界碰撞
         # self.__world_collision.enable_voxel(enable=True, name="world_voxel", env_idx=0) # 启动体素描述
         rospy.loginfo('cuMotion_MPC_Server is ready for planning queries!')
 
         # 控制说明
         self.retract_cfg_increment = -0.2
 
-        # # Initialize motion generation config
+        # # # Initialize motion generation config
+        # self.motion_tensor_args = TensorDeviceType()
         # motion_gen_config = MotionGenConfig.load_from_robot_config(
         #     robot_dict,
         #     world_file,
-        #     self.tensor_args,
+        #     self.motion_tensor_args,
+        #     # self.tensor_args,
         #     interpolation_dt=interpolation_dt,
         #     collision_cache={
         #         'obb': collision_cache_cuboid,
@@ -458,6 +465,7 @@ class CumotionActionServer:
         global origin_esdf_grid
         global IF_PROCESS_VOXEL_MAP_SATUS
         global tsdf_response
+        global DEBUG_MODE
 
         # 获取ESDF地图并更新
         origin_esdf_grid = self.get_esdf_voxel_grid(tsdf_response)
@@ -478,8 +486,14 @@ class CumotionActionServer:
             rospy.logerr('ESDF data is empty, try again after few seconds.')
             return False
 
+        if DEBUG_MODE:
+            rospy.loginfo(f"ESDF grid max: {torch.max(esdf_grid.feature_tensor)}, min: {torch.min(esdf_grid.feature_tensor)}")
+            rospy.loginfo(f"ESDF grid shape: {esdf_grid.feature_tensor.shape}")
+
         # 更新体素地图，假设__world_collision是处理碰撞检测的类
         self.__world_collision.update_voxel_data(esdf_grid)
+        # # 更新体素地图的体素的特征
+        # self.__world_collision.update_voxel_features(esdf_grid.feature_tensor, name="world_voxel", env_idx=0)
         rospy.loginfo('Updated ESDF grid')
 
         # 体素地图更新完毕
@@ -501,7 +515,7 @@ class CumotionActionServer:
             return None
 
     def get_esdf_voxel_grid(self, esdf_data):
-        DEBUG_MODE = True
+        global DEBUG_MODE
 
         esdf_array = esdf_data.esdf_and_gradients # 提取esdf网格和梯度信息
         array_shape = [ # 从 esdf_array 的布局信息中读取体素网格的三维形状 [x, y, z]，表示体素在每个维度上的数量
@@ -517,7 +531,7 @@ class CumotionActionServer:
         array_data = np.array(esdf_array.data) # 将 esdf_array.data 转换为 NumPy 数组 array_data，方便后续数据处理
 
         # 将 array_data 转换到目标设备上（如 GPU），确保数据存储在合适的计算设备上加速处理
-        array_data = self.__tensor_args.to_device(array_data) 
+        array_data = self.tensor_args.to_device(array_data) 
 
         if DEBUG_MODE:
             rospy.loginfo(f"ESDF array data: {array_data}")
@@ -527,7 +541,9 @@ class CumotionActionServer:
 
         # Array is squeezed to 1 dimension
         array_data = array_data.reshape(-1, 1) # 将 array_data 压缩为二维数组（[-1, 1]），即每一行表示一个体素的值，用于后续处理
-
+        
+        # array_data[:] = -9 # 设置所有的voxel的数值都为一样
+        
         # nvblox uses negative distance inside obstacles, cuRobo needs the opposite:
         array_data = -1 * array_data # 将距离值取反，将内部障碍物的负距离值转化为正距离值，以匹配 cuRobo 的要求
 
@@ -821,6 +837,7 @@ class CumotionActionServer:
                 self.control_robot_arm_cmd(joint_positions_list)
             
     def publish_voxels(self, voxels):
+        global DEBUG_MODE
         vox_size = self.publish_voxel_size
 
         # create marker:
@@ -863,6 +880,11 @@ class CumotionActionServer:
         # publish voxels:
         marker.header.stamp = rospy.Time.now() 
 
+        # DEBUG
+        if DEBUG_MODE:
+            rospy.loginfo(f"Voxels stats: max={torch.max(voxels[:, 3])}, min={torch.min(voxels[:, 3])}")
+            rospy.loginfo(f"Voxels shape: {voxels.shape}")
+        # publish 
         self.voxel_pub.publish(marker)
 
 def map_update_thread(cumotion_action_server):
@@ -903,6 +925,8 @@ def map_update_thread(cumotion_action_server):
 
 if __name__ == '__main__':
     curoBoServer = CumotionActionServer()
+
+    # 启动地图更新线程
     planning_thread = threading.Thread(target=map_update_thread, args=(curoBoServer,))
     planning_thread.start()
     
