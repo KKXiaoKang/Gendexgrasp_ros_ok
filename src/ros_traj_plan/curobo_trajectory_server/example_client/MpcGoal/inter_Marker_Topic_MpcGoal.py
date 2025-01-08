@@ -5,9 +5,19 @@ from geometry_msgs.msg import Pose, PoseStamped
 from std_msgs.msg import Header
 from interactive_markers.interactive_marker_server import InteractiveMarkerServer
 from visualization_msgs.msg import InteractiveMarker, InteractiveMarkerControl
-
+import tf
 
 pose_pub = rospy.Publisher('/mpc_cmd_result', PoseStamped, queue_size=10)
+
+def normalize_quaternion(orientation):
+    """
+    确保四元数规范化
+    """
+    quaternion = [orientation.x, orientation.y, orientation.z, orientation.w]
+    normalized_quaternion = tf.transformations.unit_vector(quaternion)
+    orientation.x, orientation.y, orientation.z, orientation.w = normalized_quaternion
+    return orientation
+
 
 def create_interactive_marker(server):
     """
@@ -23,11 +33,14 @@ def create_interactive_marker(server):
     int_marker.pose.position.x = 0.3
     int_marker.pose.position.y = 0.3
     int_marker.pose.position.z = 0.2
-    # int_marker.pose.orientation.w = 1.0
+    # 四元数需要标准化
     int_marker.pose.orientation.x = 0.0
     int_marker.pose.orientation.y = -0.70710677
     int_marker.pose.orientation.z = 0.0
     int_marker.pose.orientation.w = 0.70710677
+
+    # 标准化四元数
+    int_marker.pose.orientation = normalize_quaternion(int_marker.pose.orientation)
 
     # 控制：平移和旋转
     controls = []
@@ -128,6 +141,9 @@ def main():
     current_pose.orientation.y = -0.70710677
     current_pose.orientation.z = 0.0
     current_pose.orientation.w = 0.70710677
+
+    # 标准化四元数
+    current_pose.orientation = normalize_quaternion(current_pose.orientation)
 
     # 等待服务启动
     rate = rospy.Rate(100)  # 10Hz 频率
