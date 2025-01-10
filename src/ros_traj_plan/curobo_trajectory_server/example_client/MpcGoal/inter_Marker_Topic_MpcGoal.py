@@ -15,6 +15,7 @@ def normalize_quaternion(orientation):
     """
     quaternion = [orientation.x, orientation.y, orientation.z, orientation.w]
     normalized_quaternion = tf.transformations.unit_vector(quaternion)
+    orientation = Pose().orientation  # 新建一个空 Orientation 对象
     orientation.x, orientation.y, orientation.z, orientation.w = normalized_quaternion
     return orientation
 
@@ -93,6 +94,7 @@ def update_pose_callback(feedback):
     """
     global current_pose
     current_pose = feedback.pose  # 更新全局的 Pose
+    current_pose.orientation = normalize_quaternion(current_pose.orientation)  # 添加归一化
     rospy.loginfo(f"Updated Pose: {current_pose}")
 
 
