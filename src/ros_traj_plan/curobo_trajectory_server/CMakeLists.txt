@@ -217,6 +217,7 @@ install(DIRECTORY launch
 catkin_install_python(PROGRAMS 
   scripts/Server/Motion_traj_server.py
   scripts/Server/Mpc_traj_server.py
+  scripts/Server/Mpc_realsense_voxel.py
   scripts/TrajPlan/avoid_curobo_service_topic.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
