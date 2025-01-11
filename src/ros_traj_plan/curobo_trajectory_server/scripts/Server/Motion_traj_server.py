@@ -552,6 +552,18 @@ class CumotionActionServer:
             xyzr_tensor = voxels.xyzr_tensor.clone()
             xyzr_tensor[..., 3] = voxels.feature_tensor
             self.publish_voxels(xyzr_tensor)
+
+            # voxels = self.__world_collision.get_voxels_in_bounding_box(
+            #     Cuboid(
+            #         name='test',
+            #         pose=[0.0, 0.0, 0.0, 1, 0, 0, 0],
+            #         dims=self.__voxel_dims,
+            #     ),
+            #     voxel_size=self.publish_voxel_size,
+            # )           
+            # self.publish_voxels_from_bounding_box(voxels)
+            # rospy.loginfo(f" get_voxels_in_bounding_box voxels: {voxels}")
+
         return world_update_status
 
     def execute_callback(self, goal_handle):
@@ -778,6 +790,60 @@ class CumotionActionServer:
         # 计算队列数
         self.__query_count += 1
         return result
+
+    def publish_voxels_from_bounding_box(self, voxels):
+        vox_size = self.publish_voxel_size
+
+        # create marker:
+        marker = Marker()
+        marker.header.frame_id = self.__robot_base_frame
+        marker.id = 1  # Unique ID for this marker type
+        marker.type = 6  # Cube list
+        marker.ns = 'curobo_world_bounding_box'
+        marker.action = 0
+        marker.pose.orientation.w = 1.0
+        marker.lifetime = rospy.Duration(1000.0)
+        marker.frame_locked = False
+        marker.scale.x = vox_size
+        marker.scale.y = vox_size
+        marker.scale.z = vox_size
+
+        # Convert tensor to numpy for easier processing
+        vox = voxels.cpu().numpy()
+        marker.points = []
+
+        # Map values to colors and points
+        for i in range(min(len(vox), self.max_publish_voxels)):
+            pt = Point()
+            pt.x = float(vox[i, 0])
+            pt.y = float(vox[i, 1])
+            pt.z = float(vox[i, 2])
+
+            color = ColorRGBA()
+            value = vox[i, 3]
+
+            # Map `value` to a color gradient (e.g., red to green)
+            rgba = [
+                max(0.0, 1.0 - value),  # Red decreases with value
+                min(1.0, value),        # Green increases with value
+                0.0,                    # Blue is fixed
+                1.0                     # Alpha (fully opaque)
+            ]
+
+            color.r = rgba[0]
+            color.g = rgba[1]
+            color.b = rgba[2]
+            color.a = rgba[3]
+
+            marker.colors.append(color)
+            marker.points.append(pt)
+
+        # Add timestamp and publish marker
+        marker.header.stamp = rospy.Time.now()
+
+        # Publish marker
+        self.voxel_pub.publish(marker)
+
 
     def publish_voxels(self, voxels):
         vox_size = self.publish_voxel_size
